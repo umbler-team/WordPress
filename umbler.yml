@@ -1,0 +1,3 @@
+- stack: php
+- pack: "**/*.*"
+- dist: /public
