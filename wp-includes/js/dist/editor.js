@@ -2083,24 +2083,24 @@ var hasOwnProperty = Object.hasOwnProperty || function (obj, key) {
 /***/ }),
 
 /***/ 23:
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(54);
+
+
+/***/ }),
+
+/***/ 25:
 /***/ (function(module, exports) {
 
 (function() { module.exports = this["wp"]["url"]; }());
 
 /***/ }),
 
-/***/ 24:
+/***/ 26:
 /***/ (function(module, exports) {
 
 (function() { module.exports = this["wp"]["hooks"]; }());
-
-/***/ }),
-
-/***/ 26:
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__(54);
-
 
 /***/ }),
 
@@ -2738,6 +2738,7 @@ __webpack_require__.d(actions_namespaceObject, "multiSelect", function() { retur
 __webpack_require__.d(actions_namespaceObject, "clearSelectedBlock", function() { return clearSelectedBlock; });
 __webpack_require__.d(actions_namespaceObject, "toggleSelection", function() { return toggleSelection; });
 __webpack_require__.d(actions_namespaceObject, "replaceBlocks", function() { return replaceBlocks; });
+__webpack_require__.d(actions_namespaceObject, "replaceBlock", function() { return replaceBlock; });
 __webpack_require__.d(actions_namespaceObject, "moveBlocksDown", function() { return moveBlocksDown; });
 __webpack_require__.d(actions_namespaceObject, "moveBlocksUp", function() { return moveBlocksUp; });
 __webpack_require__.d(actions_namespaceObject, "moveBlockToPosition", function() { return moveBlockToPosition; });
@@ -2914,7 +2915,7 @@ var redux_optimist_default = /*#__PURE__*/__webpack_require__.n(redux_optimist);
 var external_lodash_ = __webpack_require__(2);
 
 // EXTERNAL MODULE: external {"this":["wp","url"]}
-var external_this_wp_url_ = __webpack_require__(23);
+var external_this_wp_url_ = __webpack_require__(25);
 
 // CONCATENATED MODULE: ./node_modules/@wordpress/editor/build-module/store/defaults.js
 
@@ -4117,7 +4118,7 @@ var lib = __webpack_require__(97);
 var lib_default = /*#__PURE__*/__webpack_require__.n(lib);
 
 // EXTERNAL MODULE: ./node_modules/@babel/runtime/regenerator/index.js
-var regenerator = __webpack_require__(26);
+var regenerator = __webpack_require__(23);
 var regenerator_default = /*#__PURE__*/__webpack_require__.n(regenerator);
 
 // EXTERNAL MODULE: external {"this":["wp","apiFetch"]}
@@ -5258,6 +5259,7 @@ var multiSelect = actions_getBlockEditorAction('multiSelect');
 var clearSelectedBlock = actions_getBlockEditorAction('clearSelectedBlock');
 var toggleSelection = actions_getBlockEditorAction('toggleSelection');
 var replaceBlocks = actions_getBlockEditorAction('replaceBlocks');
+var replaceBlock = actions_getBlockEditorAction('replaceBlock');
 var moveBlocksDown = actions_getBlockEditorAction('moveBlocksDown');
 var moveBlocksUp = actions_getBlockEditorAction('moveBlocksUp');
 var moveBlockToPosition = actions_getBlockEditorAction('moveBlockToPosition');
@@ -6973,7 +6975,7 @@ store_middlewares(store_store);
 /* harmony default export */ var build_module_store = (store_store);
 
 // EXTERNAL MODULE: external {"this":["wp","hooks"]}
-var external_this_wp_hooks_ = __webpack_require__(24);
+var external_this_wp_hooks_ = __webpack_require__(26);
 
 // EXTERNAL MODULE: external {"this":["wp","element"]}
 var external_this_wp_element_ = __webpack_require__(0);

@@ -460,7 +460,7 @@ function wp_edit_theme_plugin_file( $args ) {
 
 	// Ensure file is real.
 	if ( ! is_file( $real_file ) ) {
-		return new WP_Error( 'file_does_not_exist', __( 'No such file exists! Double check the name and try again.' ) );
+		return new WP_Error( 'file_does_not_exist', __( 'File does not exist! Please double check the name and try again.' ) );
 	}
 
 	// Ensure file extension is allowed.
@@ -742,7 +742,7 @@ function _wp_handle_upload( &$file, $overrides, $time, $action ) {
 	}
 
 	/*
-	 * This may not have orignially been intended to be overrideable,
+	 * This may not have originally been intended to be overridable,
 	 * but historically has been.
 	 */
 	if ( isset( $overrides['upload_error_strings'] ) ) {
@@ -968,12 +968,12 @@ function wp_handle_sideload( &$file, $overrides = false, $time = null ) {
  * @since 2.5.0
  * @since 5.2.0 Signature Verification with SoftFail was added.
  *
- * @param string $url                The URL of the file to download.
- * @param int    $timeout            The timeout for the request to download the file. Default 300 seconds.
- * @param bool   $signature_softfail Whether to allow Signature Verification to softfail. Default true.
+ * @param string $url                    The URL of the file to download.
+ * @param int    $timeout                The timeout for the request to download the file. Default 300 seconds.
+ * @param bool   $signature_verification Whether to perform Signature Verification. Default false.
  * @return string|WP_Error Filename on success, WP_Error on failure.
  */
-function download_url( $url, $timeout = 300, $signature_softfail = true ) {
+function download_url( $url, $timeout = 300, $signature_verification = false ) {
 	//WARNING: The file is not automatically deleted, The script must unlink() the file.
 	if ( ! $url ) {
 		return new WP_Error( 'http_no_url', __( 'Invalid URL Provided.' ) );
@@ -1037,25 +1037,53 @@ function download_url( $url, $timeout = 300, $signature_softfail = true ) {
 		}
 	}
 
-	/**
-	 * Filters the list of hosts which should have Signature Verification attempted on.
-	 *
-	 * @since 5.2.0
-	 *
-	 * @param array List of hostnames.
-	 */
-	$signed_hostnames       = apply_filters( 'wp_signature_hosts', array( 'wordpress.org', 'downloads.wordpress.org', 's.w.org' ) );
-	$signature_verification = in_array( parse_url( $url, PHP_URL_HOST ), $signed_hostnames, true );
+	// If the caller expects signature verification to occur, check to see if this URL supports it.
+	if ( $signature_verification ) {
+		/**
+		 * Filters the list of hosts which should have Signature Verification attempteds on.
+		 *
+		 * @since 5.2.0
+		 *
+		 * @param array List of hostnames.
+		 */
+		$signed_hostnames       = apply_filters( 'wp_signature_hosts', array( 'wordpress.org', 'downloads.wordpress.org', 's.w.org' ) );
+		$signature_verification = in_array( parse_url( $url, PHP_URL_HOST ), $signed_hostnames, true );
+	}
 
-	// Perform the valiation
+	// Perform signature valiation if supported.
 	if ( $signature_verification ) {
 		$signature = wp_remote_retrieve_header( $response, 'x-content-signature' );
 		if ( ! $signature ) {
 			// Retrieve signatures from a file if the header wasn't included.
 			// WordPress.org stores signatures at $package_url.sig
-			$signature_request = wp_safe_remote_get( $url . '.sig' );
-			if ( ! is_wp_error( $signature_request ) && 200 === wp_remote_retrieve_response_code( $signature_request ) ) {
-				$signature = explode( "\n", wp_remote_retrieve_body( $signature_request ) );
+
+			$signature_url = false;
+			$url_path      = parse_url( $url, PHP_URL_PATH );
+			if ( substr( $url_path, -4 ) == '.zip' || substr( $url_path, -7 ) == '.tar.gz' ) {
+				$signature_url = str_replace( $url_path, $url_path . '.sig', $url );
+			}
+
+			/**
+			 * Filter the URL where the signature for a file is located.
+			 *
+			 * @since 5.2.0
+			 *
+			 * @param false|string $signature_url The URL where signatures can be found for a file, or false if none are known.
+			 * @param string $url                 The URL being verified.
+			 */
+			$signature_url = apply_filters( 'wp_signature_url', $signature_url, $url );
+
+			if ( $signature_url ) {
+				$signature_request = wp_safe_remote_get(
+					$signature_url,
+					array(
+						'limit_response_size' => 10 * 1024, // 10KB should be large enough for quite a few signatures.
+					)
+				);
+
+				if ( ! is_wp_error( $signature_request ) && 200 === wp_remote_retrieve_response_code( $signature_request ) ) {
+					$signature = explode( "\n", wp_remote_retrieve_body( $signature_request ) );
+				}
 			}
 		}
 
@@ -1075,7 +1103,7 @@ function download_url( $url, $timeout = 300, $signature_softfail = true ) {
 			 * @param bool   $signature_softfail If a softfail is allowed.
 			 * @param string $url                The url being accessed.
 			 */
-			apply_filters( 'wp_signature_softfail', $signature_softfail, $url )
+			apply_filters( 'wp_signature_softfail', true, $url )
 		) {
 			$signature_verification->add_data( $tmpfname, 'softfail-filename' );
 		} else {
@@ -1127,7 +1155,7 @@ function verify_file_md5( $filename, $expected_md5 ) {
  * @param string|array $signatures          A Signature provided for the file.
  * @param string       $filename_for_errors A friendly filename for errors. Optional.
  *
- * @return bool|WP_Error true on success, false if verificaiton not attempted, or WP_Error describing an error condition.
+ * @return bool|WP_Error true on success, false if verification not attempted, or WP_Error describing an error condition.
  */
 function verify_file_signature( $filename, $signatures, $filename_for_errors = false ) {
 	if ( ! $filename_for_errors ) {
@@ -1145,6 +1173,63 @@ function verify_file_signature( $filename, $signatures, $filename_for_errors = f
 			),
 			( ! function_exists( 'sodium_crypto_sign_verify_detached' ) ? 'sodium_crypto_sign_verify_detached' : 'sha384' )
 		);
+	}
+
+	// Check for a edge-case affecting PHP Maths abilities
+	if (
+		! extension_loaded( 'sodium' ) &&
+		in_array( PHP_VERSION_ID, [ 70200, 70201, 70202 ], true ) &&
+		extension_loaded( 'opcache' )
+	) {
+		// Sodium_Compat isn't compatible with PHP 7.2.0~7.2.2 due to a bug in the PHP Opcache extension, bail early as it'll fail.
+		// https://bugs.php.net/bug.php?id=75938
+
+		return new WP_Error(
+			'signature_verification_unsupported',
+			sprintf(
+				/* translators: %s: The filename of the package. */
+				__( 'The authenticity of %s could not be verified as signature verification is unavailable on this system.' ),
+				'<span class="code">' . esc_html( $filename_for_errors ) . '</span>'
+			),
+			array(
+				'php'    => phpversion(),
+				'sodium' => defined( 'SODIUM_LIBRARY_VERSION' ) ? SODIUM_LIBRARY_VERSION : ( defined( 'ParagonIE_Sodium_Compat::VERSION_STRING' ) ? ParagonIE_Sodium_Compat::VERSION_STRING : false ),
+			)
+		);
+
+	}
+
+	// Verify runtime speed of Sodium_Compat is acceptable.
+	if ( ! extension_loaded( 'sodium' ) && ! ParagonIE_Sodium_Compat::polyfill_is_fast() ) {
+		$sodium_compat_is_fast = false;
+
+		// Allow for an old version of Sodium_Compat being loaded before the bundled WordPress one.
+		if ( method_exists( 'ParagonIE_Sodium_Compat', 'runtime_speed_test' ) ) {
+			// Run `ParagonIE_Sodium_Compat::runtime_speed_test()` in optimized integer mode, as that's what WordPress utilises during signing verifications.
+			$old_fastMult                      = ParagonIE_Sodium_Compat::$fastMult;
+			ParagonIE_Sodium_Compat::$fastMult = true;
+			$sodium_compat_is_fast             = ParagonIE_Sodium_Compat::runtime_speed_test( 100, 10 );
+			ParagonIE_Sodium_Compat::$fastMult = $old_fastMult;
+		}
+
+		// This cannot be performed in a reasonable amount of time
+		// https://github.com/paragonie/sodium_compat#help-sodium_compat-is-slow-how-can-i-make-it-fast
+		if ( ! $sodium_compat_is_fast ) {
+			return new WP_Error(
+				'signature_verification_unsupported',
+				sprintf(
+					/* translators: 1: The filename of the package. */
+					__( 'The authenticity of %1$s could not be verified as signature verification is unavailable on this system.' ),
+					'<span class="code">' . esc_html( $filename_for_errors ) . '</span>'
+				),
+				array(
+					'php'                => phpversion(),
+					'sodium'             => defined( 'SODIUM_LIBRARY_VERSION' ) ? SODIUM_LIBRARY_VERSION : ( defined( 'ParagonIE_Sodium_Compat::VERSION_STRING' ) ? ParagonIE_Sodium_Compat::VERSION_STRING : false ),
+					'polyfill_is_fast'   => false,
+					'max_execution_time' => ini_get( 'max_execution_time' ),
+				)
+			);
+		}
 	}
 
 	if ( ! $signatures ) {
@@ -2442,7 +2527,7 @@ All at ###SITENAME###
 }
 
 /**
- * Intercept personal data exporter page ajax responses in order to assemble the personal data export file.
+ * Intercept personal data exporter page Ajax responses in order to assemble the personal data export file.
  * @see wp_privacy_personal_data_export_page
  * @since 4.9.6
  *
@@ -2458,7 +2543,7 @@ All at ###SITENAME###
 function wp_privacy_process_personal_data_export_page( $response, $exporter_index, $email_address, $page, $request_id, $send_as_email, $exporter_key ) {
 	/* Do some simple checks on the shape of the response from the exporter.
 	 * If the exporter response is malformed, don't attempt to consume it - let it
-	 * pass through to generate a warning to the user by default ajax processing.
+	 * pass through to generate a warning to the user by default Ajax processing.
 	 */
 	if ( ! is_array( $response ) ) {
 		return $response;

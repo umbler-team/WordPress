@@ -447,6 +447,7 @@
 }
 
 .attachment-details .setting + .description {
+	clear: both;
 	font-size: 12px;
 	font-style: normal;
 	margin-bottom: 0.5em;
@@ -1234,26 +1235,33 @@
 }
 
 .media-uploader-status .upload-dismiss-errors {
+	position: absolute;
+	top: -3px;
+	left: -5px;
+	padding: 5px;
+	border-radius: 50%;
+	transition: none;
 	text-decoration: none;
 }
 
-.media-sidebar .media-uploader-status .upload-dismiss-errors {
-	position: absolute;
-	top: -10px;
-	left: -10px;
-	padding: 10px;
-	transition: none;
+.uploader-inline .media-uploader-status .upload-dismiss-errors {
+	top: 2px;
+	left: 2px;
 }
 
-.media-sidebar .media-uploader-status .upload-dismiss-errors:before {
+.media-uploader-status .upload-dismiss-errors::before {
 	content: "\f153";
 	display: block;
 	font: normal 16px/1 dashicons;
 	color: #72777c;
 }
 
-.media-sidebar .media-uploader-status .upload-dismiss-errors:hover:before,
-.media-sidebar .media-uploader-status .upload-dismiss-errors:focus:before {
+.uploader-inline .errors.media-uploader-status .upload-dismiss-errors::before {
+	color: #606a73;
+}
+
+.errors.media-uploader-status .upload-dismiss-errors:hover::before,
+.errors.media-uploader-status .upload-dismiss-errors:focus::before {
 	color: #c00;
 }
 
@@ -1266,6 +1274,7 @@
 }
 
 .uploader-inline .upload-errors .upload-error {
+	padding: 12px 30px;
 	background-color: #fbeaea;
 	box-shadow: none;
 }
@@ -2386,7 +2395,8 @@
 	.attachment-details .setting input[type="tel"],
 	.attachment-details .setting input[type="url"],
 	.attachment-details .setting textarea,
-	.attachment-details .setting select {
+	.attachment-details .setting select,
+	.attachment-details .setting + .description {
 		float: none;
 		width: 98%;
 		max-width: none;
@@ -2434,6 +2444,15 @@
 	.image-details .embed-media-settings .setting textarea {
 		width: 100%;
 		margin-right: 0;
+	}
+
+	.image-details .embed-media-settings .setting.has-description {
+		margin-bottom: 5px;
+	}
+
+	.image-details .description {
+		width: auto;
+		margin: 0 20px;
 	}
 
 	.image-details .embed-media-settings .custom-size {

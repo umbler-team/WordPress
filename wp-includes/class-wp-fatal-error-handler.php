@@ -37,6 +37,10 @@ class WP_Fatal_Error_Handler {
 				return;
 			}
 
+			if ( ! isset( $GLOBALS['wp_locale'] ) && function_exists( 'load_default_textdomain' ) ) {
+				load_default_textdomain();
+			}
+
 			if ( ! is_multisite() && wp_recovery_mode()->is_initialized() ) {
 				wp_recovery_mode()->handle_error( $error );
 			}
@@ -161,7 +165,15 @@ class WP_Fatal_Error_Handler {
 			require_once ABSPATH . WPINC . '/functions.php';
 		}
 
-		$message = __( 'The site is experiencing technical difficulties.' );
+		if ( ! class_exists( 'WP_Error' ) ) {
+			require_once ABSPATH . WPINC . '/class-wp-error.php';
+		}
+
+		if ( is_protected_endpoint() ) {
+			$message = __( 'The site is experiencing technical difficulties. Please check your site admin email inbox for instructions.' );
+		} else {
+			$message = __( 'The site is experiencing technical difficulties.' );
+		}
 
 		$args = array(
 			'response' => 500,

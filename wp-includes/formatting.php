@@ -3040,7 +3040,9 @@ function wp_rel_nofollow_callback( $matches ) {
 function wp_targeted_link_rel( $text ) {
 	// Don't run (more expensive) regex if no links with targets.
 	if ( stripos( $text, 'target' ) !== false && stripos( $text, '<a ' ) !== false ) {
-		$text = preg_replace_callback( '|<a\s([^>]*target\s*=[^>]*)>|i', 'wp_targeted_link_rel_callback', $text );
+		if ( ! is_serialized( $text ) ) {
+			$text = preg_replace_callback( '|<a\s([^>]*target\s*=[^>]*)>|i', 'wp_targeted_link_rel_callback', $text );
+		}
 	}
 
 	return $text;
@@ -3094,6 +3096,10 @@ function wp_targeted_link_rel_callback( $matches ) {
 		$delimiter = trim( $rel_match[1] ) ? $rel_match[1] : '"';
 		$rel       = 'rel=' . $delimiter . trim( implode( ' ', $parts ) ) . $delimiter;
 		$link_html = str_replace( $rel_match[0], $rel, $link_html );
+	} elseif ( preg_match( '|target\s*=\s*?\\\\"|', $link_html ) ) {
+		$link_html .= " rel=\\\"$rel\\\"";
+	} elseif ( preg_match( '#(target|href)\s*=\s*?\'#', $link_html ) ) {
+		$link_html .= " rel='$rel'";
 	} else {
 		$link_html .= " rel=\"$rel\"";
 	}
@@ -3426,13 +3432,13 @@ function get_date_from_gmt( $string, $format = 'Y-m-d H:i:s' ) {
 	if ( $tz ) {
 		$datetime = date_create( $string, new DateTimeZone( 'UTC' ) );
 		if ( ! $datetime ) {
-			return date( $format, 0 );
+			return gmdate( $format, 0 );
 		}
 		$datetime->setTimezone( new DateTimeZone( $tz ) );
 		$string_localtime = $datetime->format( $format );
 	} else {
 		if ( ! preg_match( '#([0-9]{1,4})-([0-9]{1,2})-([0-9]{1,2}) ([0-9]{1,2}):([0-9]{1,2}):([0-9]{1,2})#', $string, $matches ) ) {
-			return date( $format, 0 );
+			return gmdate( $format, 0 );
 		}
 		$string_time      = gmmktime( $matches[4], $matches[5], $matches[6], $matches[2], $matches[3], $matches[1] );
 		$string_localtime = gmdate( $format, $string_time + get_option( 'gmt_offset' ) * HOUR_IN_SECONDS );
@@ -4805,8 +4811,8 @@ function wp_pre_kses_less_than_callback( $matches ) {
  * @since 2.5.0
  * @link https://secure.php.net/sprintf
  *
- * @param string $pattern   The string which formatted args are inserted.
- * @param mixed  $args ,... Arguments to be formatted into the $pattern string.
+ * @param string $pattern The string which formatted args are inserted.
+ * @param mixed  ...$args Arguments to be formatted into the $pattern string.
  * @return string The formatted string.
  */
 function wp_sprintf( $pattern ) {
@@ -5514,7 +5520,7 @@ function _print_emoji_detection_script() {
 
 		/*
 		 * If you're looking at a src version of this file, you'll see an "include"
-		 * statement below. This is used by the `grunt build` process to directly
+		 * statement below. This is used by the `npm run build` process to directly
 		 * include a minified version of wp-emoji-loader.js, instead of using the
 		 * readfile() method from above.
 		 *
@@ -5730,7 +5736,7 @@ function wp_staticize_emoji_for_email( $mail ) {
  * Returns arrays of emoji data.
  *
  * These arrays are automatically built from the regex in twemoji.js - if they need to be updated,
- * you should update the regex there, then run the `grunt precommit:emoji` job.
+ * you should update the regex there, then run the `npm run grunt precommit:emoji` job.
  *
  * @since 4.9.0
  * @access private

@@ -645,6 +645,12 @@ code {
 	color: #124964;
 }
 
+/* Dashicon for language options on General Settings and Profile screens */
+.form-table th label[for="locale"] .dashicons,
+.form-table th label[for="WPLANG"] .dashicons {
+	margin-left: 5px;
+}
+
 .wrap .page-title-action:focus {
 	border-color: #5b9dd9;
 	box-shadow: 0 0 2px rgba(30, 140, 190, 0.8);
@@ -2171,7 +2177,7 @@ html.wp-toolbar {
 	margin-left: 0.5em; /* half the font size so set the font size properly */
 	padding: 5px 10px;
 	font-size: 14px;
-	line-height: 1.8;
+	line-height: 1.71428571;
 	font-weight: 600;
 	background: #e5e5e5;
 	color: #555;
@@ -3686,6 +3692,10 @@ img {
 		padding-top: 46px;
 	}
 
+	.screen-reader-shortcut:focus {
+		top: -39px;
+	}
+
 	body {
 		min-width: 240px;
 		overflow-x: hidden;
@@ -3982,6 +3992,10 @@ img {
 		padding-top: 0;
 	}
 
+	.screen-reader-shortcut:focus {
+		top: 7px;
+	}
+
 	#wpbody {
 		padding-top: 46px;
 	}
@@ -3999,8 +4013,15 @@ img {
 
 	h1 .nav-tab,
 	h2 .nav-tab,
-	h3 .nav-tab {
+	h3 .nav-tab,
+	nav .nav-tab {
 		margin: 10px 10px 0 0;
+		border-bottom: 1px solid #ccc;
+	}
+
+	.nav-tab-active:hover,
+	.nav-tab-active:focus,
+	.nav-tab-active:focus:active {
 		border-bottom: 1px solid #ccc;
 	}
 }

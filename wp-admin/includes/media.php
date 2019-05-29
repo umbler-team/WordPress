@@ -476,15 +476,16 @@ function media_handle_sideload( $file_array, $post_id, $desc = null, $post_data 
 }
 
 /**
- * Adds the iframe to display content for the media upload page
+ * Outputs the iframe to display the media upload page.
  *
  * @since 2.5.0
  *
  * @global int $body_id
  *
- * @param string|callable $content_func
+ * @param callable $content_func Function that outputs the content.
+ * @param mixed    ...$args      Optional additional parameters to pass to the callback function when it's called.
  */
-function wp_iframe( $content_func /* ... */ ) {
+function wp_iframe( $content_func ) {
 	_wp_admin_html_begin();
 	?>
 <title><?php bloginfo( 'name' ); ?> &rsaquo; <?php _e( 'Uploads' ); ?> &#8212; <?php _e( 'WordPress' ); ?></title>
@@ -3020,15 +3021,15 @@ function edit_form_image_editor( $post ) {
 		<p class="attachment-alt-text-description" id="alt-text-description">
 			<?php
 			printf(
-				/* translators: 1: link start tag, 2: accessibility text, 3: link end tag */
-				__( '%1$sDescribe the purpose of the image%2$s%3$s. Leave empty if the image is purely decorative.' ),
-				'<a href="' . esc_url( 'https://www.w3.org/WAI/tutorials/images/decision-tree' ) . '" target="_blank" rel="noopener noreferrer">',
+				/* translators: 1: link to tutorial, 2: additional link attributes, 3: accessibility text */
+				__( '<a href="%1$s" %2$s>Describe the purpose of the image%3$s</a>. Leave empty if the image is purely decorative.' ),
+				esc_url( 'https://www.w3.org/WAI/tutorials/images/decision-tree' ),
+				'target="_blank" rel="noopener noreferrer"',
 				sprintf(
 					'<span class="screen-reader-text"> %s</span>',
 					/* translators: accessibility text */
 					__( '(opens in a new tab)' )
-				),
-				'</a>'
+				)
 			);
 			?>
 		</p>
