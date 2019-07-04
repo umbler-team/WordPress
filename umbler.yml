@@ -16,6 +16,7 @@ env:
   SECURE_AUTH_SALT: "{new_hash_64}"
   LOGGED_IN_SALT: "{new_hash_64}"
   NONCE_SALT: "{new_hash_64}"
+  php_extensions: "gd mysql mysqli opcache pdo_mysql soap"
   
 requires:
   database:
