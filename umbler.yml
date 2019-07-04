@@ -1,3 +1,22 @@
+name: wordpress
 stack: php
 pack: "**/*.*"
 dist: /public
+
+env:
+  DB_NAME: "{database_mysql_name}" 
+  DB_USER: "{database_mysql_user}"
+  DB_PASSWORD: "{database_mysql_password}"
+  DB_HOST: "{database_mysql_host}"
+  AUTH_KEY: "{new_hash_64}" 
+  SECURE_AUTH_KEY: "{new_hash_64}"
+  LOGGED_IN_KEY: "{new_hash_64}"
+  NONCE_KEY: "{new_hash_64}"
+  AUTH_SALT: "{new_hash_64}"
+  SECURE_AUTH_SALT: "{new_hash_64}"
+  LOGGED_IN_SALT: "{new_hash_64}"
+  NONCE_SALT: "{new_hash_64}"
+  
+requires:
+  database:
+    type: mysql
