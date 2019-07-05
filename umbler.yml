@@ -20,4 +20,4 @@ env:
   
 requires:
   database:
-    type: mysql
+    - type: mysql
