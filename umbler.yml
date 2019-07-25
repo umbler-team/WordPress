@@ -1,7 +1,7 @@
 name: wordpress
 stack: php
 pack: "**/*.*"
-dist: /public
+dest: /public
 
 env:
   DB_NAME: "{database_mysql_name}" 
