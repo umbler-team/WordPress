@@ -73,7 +73,8 @@ include( ABSPATH . 'wp-admin/admin-header.php' );
 
 <?php
 if ( ! is_multisite() ) {
-	$wp_site_url_class = $wp_home_class = '';
+	$wp_site_url_class = '';
+	$wp_home_class     = '';
 	if ( defined( 'WP_SITEURL' ) ) {
 		$wp_site_url_class = ' disabled';
 	}
@@ -252,10 +253,10 @@ if ( empty( $tzstring ) ) { // Create a UTC+- zone if no timezone string exists
 <p class="timezone-info">
 <span>
 	<?php
-	// Set TZ so localtime works.
-	date_default_timezone_set( $tzstring );
-	$now = localtime( time(), true );
-	if ( $now['tm_isdst'] ) {
+	$now = new DateTime( 'now', new DateTimeZone( $tzstring ) );
+	$dst = (bool) $now->format( 'I' );
+
+	if ( $dst ) {
 		_e( 'This timezone is currently in daylight saving time.' );
 	} else {
 		_e( 'This timezone is currently in standard time.' );
@@ -296,8 +297,6 @@ if ( empty( $tzstring ) ) { // Create a UTC+- zone if no timezone string exists
 			_e( 'This timezone does not observe daylight saving time.' );
 		}
 	}
-	// Set back to UTC.
-	date_default_timezone_set( 'UTC' );
 	?>
 	</span>
 </p>

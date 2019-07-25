@@ -19,7 +19,6 @@ require( dirname( dirname( __FILE__ ) ) . '/wp-load.php' );
 
 nocache_headers();
 
-timer_start();
 require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 
 delete_site_transient( 'update_core' );
@@ -54,7 +53,7 @@ if ( file_exists( WP_CONTENT_DIR . '/db.php' ) && empty( $wpdb->is_mysql ) ) {
 	$mysql_compat = version_compare( $mysql_version, $required_mysql_version, '>=' );
 }
 
-@header( 'Content-Type: ' . get_option( 'html_type' ) . '; charset=' . get_option( 'blog_charset' ) );
+header( 'Content-Type: ' . get_option( 'html_type' ) . '; charset=' . get_option( 'blog_charset' ) );
 ?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" <?php language_attributes(); ?>>
@@ -132,15 +131,6 @@ else :
 	<h1><?php _e( 'Update Complete' ); ?></h1>
 	<p><?php _e( 'Your WordPress database has been successfully updated!' ); ?></p>
 	<p class="step"><a class="button button-large" href="<?php echo $backto; ?>"><?php _e( 'Continue' ); ?></a></p>
-
-<!--
-<pre>
-			<?php printf( __( '%s queries' ), $wpdb->num_queries ); ?>
-
-			<?php printf( __( '%s seconds' ), timer_stop( 0 ) ); ?>
-</pre>
--->
-
 			<?php
 			break;
 endswitch;

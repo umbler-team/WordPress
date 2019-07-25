@@ -584,6 +584,9 @@ function wp_dashboard_recent_drafts( $drafts = false ) {
 	}
 	echo '<h2 class="hide-if-no-js">' . __( 'Your Recent Drafts' ) . "</h2>\n<ul>";
 
+	/* translators: Maximum number of words used in a preview of a draft on the dashboard. */
+	$draft_length = intval( _x( '10', 'draft_length' ) );
+
 	$drafts = array_slice( $drafts, 0, 3 );
 	foreach ( $drafts as $draft ) {
 		$url   = get_edit_post_link( $draft->ID );
@@ -592,7 +595,8 @@ function wp_dashboard_recent_drafts( $drafts = false ) {
 		/* translators: %s: post title */
 		echo '<div class="draft-title"><a href="' . esc_url( $url ) . '" aria-label="' . esc_attr( sprintf( __( 'Edit &#8220;%s&#8221;' ), $title ) ) . '">' . esc_html( $title ) . '</a>';
 		echo '<time datetime="' . get_the_time( 'c', $draft ) . '">' . get_the_time( __( 'F j, Y' ), $draft ) . '</time></div>';
-		if ( $the_content = wp_trim_words( $draft->post_content, 10 ) ) {
+		$the_content = wp_trim_words( $draft->post_content, $draft_length );
+		if ( $the_content ) {
 			echo '<p>' . $the_content . '</p>';
 		}
 		echo "</li>\n";
@@ -1009,7 +1013,8 @@ function wp_dashboard_cached_rss_widget( $widget_id, $callback, $check_urls = ar
 
 	$locale    = get_user_locale();
 	$cache_key = 'dash_v2_' . md5( $widget_id . '_' . $locale );
-	if ( false !== ( $output = get_transient( $cache_key ) ) ) {
+	$output    = get_transient( $cache_key );
+	if ( false !== $output ) {
 		echo $output;
 		return true;
 	}
@@ -1070,7 +1075,8 @@ function wp_dashboard_trigger_widget_control( $widget_control_id = false ) {
  * @param array $form_inputs
  */
 function wp_dashboard_rss_control( $widget_id, $form_inputs = array() ) {
-	if ( ! $widget_options = get_option( 'dashboard_widget_options' ) ) {
+	$widget_options = get_option( 'dashboard_widget_options' );
+	if ( ! $widget_options ) {
 		$widget_options = array();
 	}
 
@@ -1530,7 +1536,7 @@ function wp_dashboard_browser_nag() {
 	 * @param string $notice   The notice content.
 	 * @param array  $response An array containing web browser information. See `wp_check_browser_version()`.
 	 */
-	echo apply_filters( 'browse-happy-notice', $notice, $response );
+	echo apply_filters( 'browse-happy-notice', $notice, $response );  // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores
 }
 
 /**
@@ -1563,7 +1569,8 @@ function wp_check_browser_version() {
 
 	$key = md5( $_SERVER['HTTP_USER_AGENT'] );
 
-	if ( false === ( $response = get_site_transient( 'browser_' . $key ) ) ) {
+	$response = get_site_transient( 'browser_' . $key );
+	if ( false === $response ) {
 		// include an unmodified $wp_version
 		include( ABSPATH . WPINC . '/version.php' );
 
@@ -1714,22 +1721,21 @@ function wp_welcome_panel() {
 	<div class="welcome-panel-column welcome-panel-last">
 		<h3><?php _e( 'More Actions' ); ?></h3>
 		<ul>
-		<?php if ( current_theme_supports( 'widgets' ) || current_theme_supports( 'menus' ) ) : ?>
-			<li><div class="welcome-icon welcome-widgets-menus">
-			<?php
+		<?php
+		if ( current_theme_supports( 'widgets' ) || current_theme_supports( 'menus' ) ) :
 			if ( current_theme_supports( 'widgets' ) && current_theme_supports( 'menus' ) ) {
-				printf(
+				$widgets_menus_link = sprintf(
 					__( 'Manage <a href="%1$s">widgets</a> or <a href="%2$s">menus</a>' ),
 					admin_url( 'widgets.php' ),
 					admin_url( 'nav-menus.php' )
 				);
 			} elseif ( current_theme_supports( 'widgets' ) ) {
-				echo '<a href="' . admin_url( 'widgets.php' ) . '">' . __( 'Manage widgets' ) . '</a>';
+				$widgets_menus_link = '<a href="' . admin_url( 'widgets.php' ) . '">' . __( 'Manage widgets' ) . '</a>';
 			} else {
-				echo '<a href="' . admin_url( 'nav-menus.php' ) . '">' . __( 'Manage menus' ) . '</a>';
+				$widgets_menus_link = '<a href="' . admin_url( 'nav-menus.php' ) . '">' . __( 'Manage menus' ) . '</a>';
 			}
 			?>
-			</div></li>
+			<li><div class="welcome-icon welcome-widgets-menus"><?php echo $widgets_menus_link; ?></div></li>
 		<?php endif; ?>
 		<?php if ( current_user_can( 'manage_options' ) ) : ?>
 			<li><?php printf( '<a href="%s" class="welcome-icon welcome-comments">' . __( 'Turn comments on or off' ) . '</a>', admin_url( 'options-discussion.php' ) ); ?></li>

@@ -525,9 +525,9 @@ function wp_install_maybe_enable_pretty_permalinks() {
 		$wp_rewrite->set_permalink_structure( $permalink_structure );
 
 		/*
-		  * Flush rules with the hard option to force refresh of the web-server's
-		  * rewrite config file (e.g. .htaccess or web.config).
-		  */
+		 * Flush rules with the hard option to force refresh of the web-server's
+		 * rewrite config file (e.g. .htaccess or web.config).
+		 */
 		$wp_rewrite->flush_rules( true );
 
 		$test_url = '';
@@ -539,12 +539,12 @@ function wp_install_maybe_enable_pretty_permalinks() {
 		}
 
 		/*
-		  * Send a request to the site, and check whether
-		  * the 'x-pingback' header is returned as expected.
-		  *
-		  * Uses wp_remote_get() instead of wp_remote_head() because web servers
-		  * can block head requests.
-		  */
+		 * Send a request to the site, and check whether
+		 * the 'x-pingback' header is returned as expected.
+		 *
+		 * Uses wp_remote_get() instead of wp_remote_head() because web servers
+		 * can block head requests.
+		 */
 		$response          = wp_remote_get( $test_url, array( 'timeout' => 5 ) );
 		$x_pingback_header = wp_remote_retrieve_header( $response, 'x-pingback' );
 		$pretty_permalinks = $x_pingback_header && $x_pingback_header === get_bloginfo( 'pingback_url' );
@@ -608,7 +608,7 @@ https://wordpress.org/
 			$login_url
 		);
 
-		@wp_mail( $email, __( 'New WordPress Site' ), $message );
+		wp_mail( $email, __( 'New WordPress Site' ), $message );
 	}
 endif;
 
@@ -1260,7 +1260,8 @@ function upgrade_230() {
 		$term_group  = 0;
 
 		// Associate terms with the same slug in a term group and make slugs unique.
-		if ( $exists = $wpdb->get_results( $wpdb->prepare( "SELECT term_id, term_group FROM $wpdb->terms WHERE slug = %s", $slug ) ) ) {
+		$exists = $wpdb->get_results( $wpdb->prepare( "SELECT term_id, term_group FROM $wpdb->terms WHERE slug = %s", $slug ) );
+		if ( $exists ) {
 			$term_group = $exists[0]->term_group;
 			$id         = $exists[0]->term_id;
 			$num        = 2;
@@ -1365,7 +1366,8 @@ function upgrade_230() {
 			$term_group = 0;
 
 			// Associate terms with the same slug in a term group and make slugs unique.
-			if ( $exists = $wpdb->get_results( $wpdb->prepare( "SELECT term_id, term_group FROM $wpdb->terms WHERE slug = %s", $slug ) ) ) {
+			$exists = $wpdb->get_results( $wpdb->prepare( "SELECT term_id, term_group FROM $wpdb->terms WHERE slug = %s", $slug ) );
+			if ( $exists ) {
 				$term_group = $exists[0]->term_group;
 				$term_id    = $exists[0]->term_id;
 			}
@@ -1823,8 +1825,11 @@ function upgrade_350() {
 		}
 	}
 
-	if ( $wp_current_db_version < 22422 && $term = get_term_by( 'slug', 'post-format-standard', 'post_format' ) ) {
-		wp_delete_term( $term->term_id, 'post_format' );
+	if ( $wp_current_db_version < 22422 ) {
+		$term = get_term_by( 'slug', 'post-format-standard', 'post_format' );
+		if ( $term ) {
+			wp_delete_term( $term->term_id, 'post_format' );
+		}
 	}
 }
 
@@ -2430,7 +2435,8 @@ function maybe_convert_table_to_utf8mb4( $table ) {
 function get_alloptions_110() {
 	global $wpdb;
 	$all_options = new stdClass;
-	if ( $options = $wpdb->get_results( "SELECT option_name, option_value FROM $wpdb->options" ) ) {
+	$options     = $wpdb->get_results( "SELECT option_name, option_value FROM $wpdb->options" );
+	if ( $options ) {
 		foreach ( $options as $option ) {
 			if ( 'siteurl' == $option->option_name || 'home' == $option->option_name || 'category_base' == $option->option_name ) {
 				$option->option_value = untrailingslashit( $option->option_value );
@@ -2453,7 +2459,7 @@ function get_alloptions_110() {
  * @param string $setting Option name.
  * @return mixed
  */
-function __get_option( $setting ) {
+function __get_option( $setting ) { // phpcs:ignore WordPress.NamingConventions.ValidFunctionName.FunctionDoubleUnderscore
 	global $wpdb;
 
 	if ( $setting == 'home' && defined( 'WP_HOME' ) ) {
@@ -2522,7 +2528,7 @@ function deslash( $content ) {
  *                                 Default true.
  * @return array Strings containing the results of the various update queries.
  */
-function dbDelta( $queries = '', $execute = true ) {
+function dbDelta( $queries = '', $execute = true ) { // phpcs:ignore WordPress.NamingConventions.ValidFunctionName.FunctionNameInvalid
 	global $wpdb;
 
 	if ( in_array( $queries, array( '', 'all', 'blog', 'global', 'ms_global' ), true ) ) {
@@ -2607,7 +2613,9 @@ function dbDelta( $queries = '', $execute = true ) {
 		}
 
 		// Clear the field and index arrays.
-		$cfields = $indices = $indices_without_subparts = array();
+		$cfields                  = array();
+		$indices                  = array();
+		$indices_without_subparts = array();
 
 		// Get all of the field names in the query from between the parentheses.
 		preg_match( '|\((.*)\)|ms', $qry, $match2 );
@@ -2682,7 +2690,8 @@ function dbDelta( $queries = '', $execute = true ) {
 					$index_name = ( 'PRIMARY KEY' === $index_type ) ? '' : '`' . strtolower( $index_matches['index_name'] ) . '`';
 
 					// Parse the columns. Multiple columns are separated by a comma.
-					$index_columns = $index_columns_without_subparts = array_map( 'trim', explode( ',', $index_matches['index_columns'] ) );
+					$index_columns                  = array_map( 'trim', explode( ',', $index_matches['index_columns'] ) );
+					$index_columns_without_subparts = $index_columns;
 
 					// Normalize columns.
 					foreach ( $index_columns as $id => &$index_column ) {
@@ -2852,7 +2861,8 @@ function dbDelta( $queries = '', $execute = true ) {
 				$index_string .= " ($index_columns)";
 
 				// Check if the index definition exists, ignoring subparts.
-				if ( ! ( ( $aindex = array_search( $index_string, $indices_without_subparts ) ) === false ) ) {
+				$aindex = array_search( $index_string, $indices_without_subparts );
+				if ( false !== $aindex ) {
 					// If the index already exists (even with different subparts), we don't need to create it.
 					unset( $indices_without_subparts[ $aindex ] );
 					unset( $indices[ $aindex ] );
@@ -2959,7 +2969,7 @@ function make_site_theme_from_oldschool( $theme_name, $template ) {
 		if ( $oldfile == 'index.php' ) {
 			$index = implode( '', file( "$oldpath/$oldfile" ) );
 			if ( strpos( $index, 'WP_USE_THEMES' ) !== false ) {
-				if ( ! @copy( WP_CONTENT_DIR . '/themes/' . WP_DEFAULT_THEME . '/index.php', "$site_dir/$newfile" ) ) {
+				if ( ! copy( WP_CONTENT_DIR . '/themes/' . WP_DEFAULT_THEME . '/index.php', "$site_dir/$newfile" ) ) {
 					return false;
 				}
 
@@ -2968,7 +2978,7 @@ function make_site_theme_from_oldschool( $theme_name, $template ) {
 			}
 		}
 
-		if ( ! @copy( "$oldpath/$oldfile", "$site_dir/$newfile" ) ) {
+		if ( ! copy( "$oldpath/$oldfile", "$site_dir/$newfile" ) ) {
 			return false;
 		}
 
@@ -3029,19 +3039,20 @@ function make_site_theme_from_default( $theme_name, $template ) {
 	// Copy files from the default theme to the site theme.
 	//$files = array('index.php', 'comments.php', 'comments-popup.php', 'footer.php', 'header.php', 'sidebar.php', 'style.css');
 
-	$theme_dir = @ opendir( $default_dir );
+	$theme_dir = @opendir( $default_dir );
 	if ( $theme_dir ) {
 		while ( ( $theme_file = readdir( $theme_dir ) ) !== false ) {
 			if ( is_dir( "$default_dir/$theme_file" ) ) {
 				continue;
 			}
-			if ( ! @copy( "$default_dir/$theme_file", "$site_dir/$theme_file" ) ) {
+			if ( ! copy( "$default_dir/$theme_file", "$site_dir/$theme_file" ) ) {
 				return;
 			}
 			chmod( "$site_dir/$theme_file", 0777 );
 		}
+
+		closedir( $theme_dir );
 	}
-	@closedir( $theme_dir );
 
 	// Rewrite the theme header.
 	$stylelines = explode( "\n", implode( '', file( "$site_dir/style.css" ) ) );
@@ -3071,19 +3082,20 @@ function make_site_theme_from_default( $theme_name, $template ) {
 		return false;
 	}
 
-	$images_dir = @ opendir( "$default_dir/images" );
+	$images_dir = @opendir( "$default_dir/images" );
 	if ( $images_dir ) {
 		while ( ( $image = readdir( $images_dir ) ) !== false ) {
 			if ( is_dir( "$default_dir/images/$image" ) ) {
 				continue;
 			}
-			if ( ! @copy( "$default_dir/images/$image", "$site_dir/images/$image" ) ) {
+			if ( ! copy( "$default_dir/images/$image", "$site_dir/images/$image" ) ) {
 				return;
 			}
 			chmod( "$site_dir/images/$image", 0777 );
 		}
+
+		closedir( $images_dir );
 	}
-	@closedir( $images_dir );
 }
 
 /**

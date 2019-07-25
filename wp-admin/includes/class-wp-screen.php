@@ -202,7 +202,8 @@ final class WP_Screen {
 			return $hook_name;
 		}
 
-		$post_type       = $taxonomy = null;
+		$post_type       = null;
+		$taxonomy        = null;
 		$in_admin        = false;
 		$action          = '';
 		$is_block_editor = false;
@@ -927,16 +928,16 @@ final class WP_Screen {
 		}
 		?>
 		<div id="screen-meta-links">
-		<?php if ( $this->get_help_tabs() ) : ?>
-			<div id="contextual-help-link-wrap" class="hide-if-no-js screen-meta-toggle">
-			<button type="button" id="contextual-help-link" class="button show-settings" aria-controls="contextual-help-wrap" aria-expanded="false"><?php _e( 'Help' ); ?></button>
+		<?php if ( $this->show_screen_options() ) : ?>
+			<div id="screen-options-link-wrap" class="hide-if-no-js screen-meta-toggle">
+			<button type="button" id="show-settings-link" class="button show-settings" aria-controls="screen-options-wrap" aria-expanded="false"><?php _e( 'Screen Options' ); ?></button>
 			</div>
 			<?php
 		endif;
-		if ( $this->show_screen_options() ) :
+		if ( $this->get_help_tabs() ) :
 			?>
-			<div id="screen-options-link-wrap" class="hide-if-no-js screen-meta-toggle">
-			<button type="button" id="show-settings-link" class="button show-settings" aria-controls="screen-options-wrap" aria-expanded="false"><?php _e( 'Screen Options' ); ?></button>
+			<div id="contextual-help-link-wrap" class="hide-if-no-js screen-meta-toggle">
+			<button type="button" id="contextual-help-link" class="button show-settings" aria-controls="contextual-help-wrap" aria-expanded="false"><?php _e( 'Help' ); ?></button>
 			</div>
 		<?php endif; ?>
 		</div>
@@ -1015,7 +1016,10 @@ final class WP_Screen {
 			)
 		);
 
-		$wrapper_start = $wrapper_end = $form_start = $form_end = '';
+		$wrapper_start = '';
+		$wrapper_end   = '';
+		$form_start    = '';
+		$form_end      = '';
 
 		// Output optional wrapper.
 		if ( $options['wrap'] ) {

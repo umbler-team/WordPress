@@ -33,8 +33,7 @@
  * @param mixed  ...$args Optional further parameters, typically starting with an object ID.
  * @return array Actual capabilities for meta capability.
  */
-function map_meta_cap( $cap, $user_id ) {
-	$args = array_slice( func_get_args(), 2 );
+function map_meta_cap( $cap, $user_id, ...$args ) {
 	$caps = array();
 
 	switch ( $cap ) {
@@ -649,17 +648,14 @@ function map_meta_cap( $cap, $user_id ) {
  * @return bool Whether the current user has the given capability. If `$capability` is a meta cap and `$object_id` is
  *              passed, whether the current user has the given meta capability for the given object.
  */
-function current_user_can( $capability ) {
+function current_user_can( $capability, ...$args ) {
 	$current_user = wp_get_current_user();
 
 	if ( empty( $current_user ) ) {
 		return false;
 	}
 
-	$args = array_slice( func_get_args(), 1 );
-	$args = array_merge( array( $capability ), $args );
-
-	return call_user_func_array( array( $current_user, 'has_cap' ), $args );
+	return $current_user->has_cap( $capability, ...$args );
 }
 
 /**
@@ -682,7 +678,7 @@ function current_user_can( $capability ) {
  * @param mixed  ...$args    Optional further parameters, typically starting with an object ID.
  * @return bool Whether the user has the given capability.
  */
-function current_user_can_for_blog( $blog_id, $capability ) {
+function current_user_can_for_blog( $blog_id, $capability, ...$args ) {
 	$switched = is_multisite() ? switch_to_blog( $blog_id ) : false;
 
 	$current_user = wp_get_current_user();
@@ -694,10 +690,7 @@ function current_user_can_for_blog( $blog_id, $capability ) {
 		return false;
 	}
 
-	$args = array_slice( func_get_args(), 2 );
-	$args = array_merge( array( $capability ), $args );
-
-	$can = call_user_func_array( array( $current_user, 'has_cap' ), $args );
+	$can = $current_user->has_cap( $capability, ...$args );
 
 	if ( $switched ) {
 		restore_current_blog();
@@ -726,8 +719,9 @@ function current_user_can_for_blog( $blog_id, $capability ) {
  * @param mixed       ...$args    Optional further parameters, typically starting with an object ID.
  * @return bool Whether the post author has the given capability.
  */
-function author_can( $post, $capability ) {
-	if ( ! $post = get_post( $post ) ) {
+function author_can( $post, $capability, ...$args ) {
+	$post = get_post( $post );
+	if ( ! $post ) {
 		return false;
 	}
 
@@ -737,10 +731,7 @@ function author_can( $post, $capability ) {
 		return false;
 	}
 
-	$args = array_slice( func_get_args(), 2 );
-	$args = array_merge( array( $capability ), $args );
-
-	return call_user_func_array( array( $author, 'has_cap' ), $args );
+	return $author->has_cap( $capability, ...$args );
 }
 
 /**
@@ -763,7 +754,7 @@ function author_can( $post, $capability ) {
  * @param mixed       ...$args    Optional further parameters, typically starting with an object ID.
  * @return bool Whether the user has the given capability.
  */
-function user_can( $user, $capability ) {
+function user_can( $user, $capability, ...$args ) {
 	if ( ! is_object( $user ) ) {
 		$user = get_userdata( $user );
 	}
@@ -772,10 +763,7 @@ function user_can( $user, $capability ) {
 		return false;
 	}
 
-	$args = array_slice( func_get_args(), 2 );
-	$args = array_merge( array( $capability ), $args );
-
-	return call_user_func_array( array( $user, 'has_cap' ), $args );
+	return $user->has_cap( $capability, ...$args );
 }
 
 /**
@@ -966,7 +954,8 @@ function revoke_super_admin( $user_id ) {
 
 	$user = get_userdata( $user_id );
 	if ( $user && 0 !== strcasecmp( $user->user_email, get_site_option( 'admin_email' ) ) ) {
-		if ( false !== ( $key = array_search( $user->user_login, $super_admins ) ) ) {
+		$key = array_search( $user->user_login, $super_admins );
+		if ( false !== $key ) {
 			unset( $super_admins[ $key ] );
 			update_site_option( 'site_admins', $super_admins );
 
@@ -1020,6 +1009,31 @@ function wp_maybe_grant_resume_extensions_caps( $allcaps ) {
 	// Even in a multisite, regular administrators should be able to resume themes.
 	if ( ! empty( $allcaps['switch_themes'] ) ) {
 		$allcaps['resume_themes'] = true;
+	}
+
+	return $allcaps;
+}
+
+/**
+ * Filters the user capabilities to grant the 'view_site_health_checks' capabilities as necessary.
+ *
+ * @since 5.2.2
+ *
+ * @param bool[]   $allcaps An array of all the user's capabilities.
+ * @param string[] $caps    Required primitive capabilities for the requested capability.
+ * @param array    $args {
+ *     Arguments that accompany the requested capability check.
+ *
+ *     @type string    $0 Requested capability.
+ *     @type int       $1 Concerned user ID.
+ *     @type mixed  ...$2 Optional second and further parameters, typically object ID.
+ * }
+ * @param WP_User  $user    The user object.
+ * @return bool[] Filtered array of the user's capabilities.
+ */
+function wp_maybe_grant_site_health_caps( $allcaps, $caps, $args, $user ) {
+	if ( ! empty( $allcaps['install_plugins'] ) && ( ! is_multisite() || is_super_admin( $user->ID ) ) ) {
+		$allcaps['view_site_health_checks'] = true;
 	}
 
 	return $allcaps;

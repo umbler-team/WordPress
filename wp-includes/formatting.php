@@ -500,6 +500,9 @@ function wpautop( $pee, $br = true ) {
 	// Add a double line break below block-level closing tags.
 	$pee = preg_replace( '!(</' . $allblocks . '>)!', "$1\n\n", $pee );
 
+	// Add a double line break after hr tags, which are self closing.
+	$pee = preg_replace( '!(<hr\s*?/?>)!', "$1\n\n", $pee );
+
 	// Standardize newline characters to "\n".
 	$pee = str_replace( array( "\r\n", "\r" ), "\n", $pee );
 
@@ -577,7 +580,7 @@ function wpautop( $pee, $br = true ) {
 	// Optionally insert line breaks.
 	if ( $br ) {
 		// Replace newlines that shouldn't be touched with a placeholder.
-		$pee = preg_replace_callback( '/<(script|style).*?<\/\\1>/s', '_autop_newline_preservation_helper', $pee );
+		$pee = preg_replace_callback( '/<(script|style|svg).*?<\/\\1>/s', '_autop_newline_preservation_helper', $pee );
 
 		// Normalize <br>
 		$pee = str_replace( array( '<br>', '<br/>' ), '<br />', $pee );
@@ -841,7 +844,7 @@ function shortcode_unautop( $pee ) {
 	$tagregexp = join( '|', array_map( 'preg_quote', array_keys( $shortcode_tags ) ) );
 	$spaces    = wp_spaces_regexp();
 
-	// phpcs:disable Squiz.Strings.ConcatenationSpacing.PaddingFound -- don't remove regex indentation
+	// phpcs:disable Squiz.Strings.ConcatenationSpacing.PaddingFound,WordPress.WhiteSpace.PrecisionAlignment.Found -- don't remove regex indentation
 	$pattern =
 		'/'
 		. '<p>'                              // Opening paragraph
@@ -933,14 +936,14 @@ function seems_utf8( $str ) {
  *
  * @staticvar string $_charset
  *
- * @param string     $string         The text which is to be encoded.
- * @param int|string $quote_style    Optional. Converts double quotes if set to ENT_COMPAT,
- *                                   both single and double if set to ENT_QUOTES or none if set to ENT_NOQUOTES.
- *                                   Also compatible with old values; converting single quotes if set to 'single',
- *                                   double if set to 'double' or both if otherwise set.
- *                                   Default is ENT_NOQUOTES.
- * @param string     $charset        Optional. The character encoding of the string. Default is false.
- * @param bool       $double_encode  Optional. Whether to encode existing html entities. Default is false.
+ * @param string       $string        The text which is to be encoded.
+ * @param int|string   $quote_style   Optional. Converts double quotes if set to ENT_COMPAT,
+ *                                    both single and double if set to ENT_QUOTES or none if set to ENT_NOQUOTES.
+ *                                    Also compatible with old values; converting single quotes if set to 'single',
+ *                                    double if set to 'double' or both if otherwise set.
+ *                                    Default is ENT_NOQUOTES.
+ * @param false|string $charset       Optional. The character encoding of the string. Default is false.
+ * @param bool         $double_encode Optional. Whether to encode existing html entities. Default is false.
  * @return string The encoded text with HTML entities.
  */
 function _wp_specialchars( $string, $quote_style = ENT_NOQUOTES, $charset = false, $double_encode = false ) {
@@ -991,7 +994,7 @@ function _wp_specialchars( $string, $quote_style = ENT_NOQUOTES, $charset = fals
 		$string = wp_kses_normalize_entities( $string );
 	}
 
-	$string = @htmlspecialchars( $string, $quote_style, $charset, $double_encode );
+	$string = htmlspecialchars( $string, $quote_style, $charset, $double_encode );
 
 	// Back-compat.
 	if ( 'single' === $_quote_style ) {
@@ -1126,6 +1129,7 @@ function wp_check_invalid_utf8( $string, $strip = false ) {
 	// Check for support for utf8 in the installed PCRE library once and store the result in a static
 	static $utf8_pcre = null;
 	if ( ! isset( $utf8_pcre ) ) {
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 		$utf8_pcre = @preg_match( '/^./u', 'a' );
 	}
 	// We can't demand utf8 in the PCRE installation, so just return the string in those cases
@@ -1133,7 +1137,7 @@ function wp_check_invalid_utf8( $string, $strip = false ) {
 		return $string;
 	}
 
-	// preg_match fails when it encounters invalid UTF8 in $string
+	// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- preg_match fails when it encounters invalid UTF8 in $string
 	if ( 1 === @preg_match( '/^./us', $string ) ) {
 		return $string;
 	}
@@ -2424,7 +2428,7 @@ function convert_invalid_entities( $content ) {
  * @param bool   $force If true, forces balancing, ignoring the value of the option. Default false.
  * @return string Balanced text
  */
-function balanceTags( $text, $force = false ) {
+function balanceTags( $text, $force = false ) {  // phpcs:ignore WordPress.NamingConventions.ValidFunctionName.FunctionNameInvalid
 	if ( $force || get_option( 'use_balanceTags' ) == 1 ) {
 		return force_balance_tags( $text );
 	} else {
@@ -2900,8 +2904,9 @@ function make_clickable( $text ) {
 					)*
 				)
 				(\)?)                                                  # 3: Trailing closing parenthesis (for parethesis balancing post processing)
-			~xS'; // The regex is a non-anchored pattern and does not have a single fixed starting character.
-				  // Tell PCRE to spend more time optimizing since, when used on a page load, it will probably be used several times.
+			~xS';
+			// The regex is a non-anchored pattern and does not have a single fixed starting character.
+			// Tell PCRE to spend more time optimizing since, when used on a page load, it will probably be used several times.
 
 			$ret = preg_replace_callback( $url_clickable, '_make_url_clickable_cb', $ret );
 
@@ -3230,7 +3235,7 @@ function convert_smilies( $text ) {
 			$content = $textarr[ $i ];
 
 			// If we're in an ignore block, wait until we find its closing tag
-			if ( '' == $ignore_block_element && preg_match( '/^<(' . $tags_to_ignore . ')>/', $content, $matches ) ) {
+			if ( '' == $ignore_block_element && preg_match( '/^<(' . $tags_to_ignore . ')[^>]*>/', $content, $matches ) ) {
 				$ignore_block_element = $matches[1];
 			}
 
@@ -3608,19 +3613,27 @@ function sanitize_email( $email ) {
  * "5 mins", "2 days".
  *
  * @since 1.5.0
+ * @since 5.3.0 Added support for showing a difference in seconds.
  *
  * @param int $from Unix timestamp from which the difference begins.
  * @param int $to   Optional. Unix timestamp to end the time difference. Default becomes time() if not set.
  * @return string Human readable time difference.
  */
-function human_time_diff( $from, $to = '' ) {
+function human_time_diff( $from, $to = 0 ) {
 	if ( empty( $to ) ) {
 		$to = time();
 	}
 
 	$diff = (int) abs( $to - $from );
 
-	if ( $diff < HOUR_IN_SECONDS ) {
+	if ( $diff < MINUTE_IN_SECONDS ) {
+		$secs = $diff;
+		if ( $secs <= 1 ) {
+			$secs = 1;
+		}
+		/* translators: Time difference between two dates, in seconds. %s: Number of seconds */
+		$since = sprintf( _n( '%s second', '%s seconds', $secs ), $secs );
+	} elseif ( $diff < HOUR_IN_SECONDS && $diff >= MINUTE_IN_SECONDS ) {
 		$mins = round( $diff / MINUTE_IN_SECONDS );
 		if ( $mins <= 1 ) {
 			$mins = 1;
@@ -3680,9 +3693,7 @@ function human_time_diff( $from, $to = '' ) {
 /**
  * Generates an excerpt from the content, if needed.
  *
- * The excerpt word amount will be 55 words and if the amount is greater than
- * that, then the string ' [&hellip;]' will be appended to the excerpt. If the string
- * is less than 55 words, then the content will be returned as is.
+ * Returns a maximum of 55 words with an ellipsis appended if necessary.
  *
  * The 55 word limit can be modified by plugins/themes using the {@see 'excerpt_length'} filter
  * The ' [&hellip;]' string can be modified by plugins/themes using the {@see 'excerpt_more'} filter
@@ -3707,14 +3718,18 @@ function wp_trim_excerpt( $text = '', $post = null ) {
 		$text = apply_filters( 'the_content', $text );
 		$text = str_replace( ']]>', ']]&gt;', $text );
 
+		/* translators: Maximum number of words used in a post excerpt. */
+		$excerpt_length = intval( _x( '55', 'excerpt_length' ) );
+
 		/**
-		 * Filters the number of words in an excerpt.
+		 * Filters the maximum number of words in a post excerpt.
 		 *
 		 * @since 2.7.0
 		 *
-		 * @param int $number The number of words. Default 55.
+		 * @param int $number The maximum number of words. Default 55.
 		 */
-		$excerpt_length = apply_filters( 'excerpt_length', 55 );
+		$excerpt_length = apply_filters( 'excerpt_length', $excerpt_length );
+
 		/**
 		 * Filters the string in the "more" link displayed after a trimmed excerpt.
 		 *
@@ -3725,6 +3740,7 @@ function wp_trim_excerpt( $text = '', $post = null ) {
 		$excerpt_more = apply_filters( 'excerpt_more', ' ' . '[&hellip;]' );
 		$text         = wp_trim_words( $text, $excerpt_length, $excerpt_more );
 	}
+
 	/**
 	 * Filters the trimmed excerpt string.
 	 *
@@ -4188,7 +4204,7 @@ function esc_url( $url, $protocols = null, $_context = 'display' ) {
 		return $url;
 	}
 
-	$url = str_replace( ' ', '%20', $url );
+	$url = str_replace( ' ', '%20', ltrim( $url ) );
 	$url = preg_replace( '|[^a-z0-9-~+_.?#=!&;,/:%@$\|*\'()\[\]\\x80-\\xff]|i', '', $url );
 
 	if ( '' === $url ) {
@@ -5837,7 +5853,8 @@ function sanitize_hex_color_no_hash( $color ) {
  * @return string
  */
 function maybe_hash_hex_color( $color ) {
-	if ( $unhashed = sanitize_hex_color_no_hash( $color ) ) {
+	$unhashed = sanitize_hex_color_no_hash( $color );
+	if ( $unhashed ) {
 		return '#' . $unhashed;
 	}
 

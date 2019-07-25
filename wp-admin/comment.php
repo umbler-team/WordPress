@@ -46,8 +46,8 @@ switch ( $action ) {
 				'id'      => 'overview',
 				'title'   => __( 'Overview' ),
 				'content' =>
-					  '<p>' . __( 'You can edit the information left in a comment if needed. This is often useful when you notice that a commenter has made a typographical error.' ) . '</p>' .
-					  '<p>' . __( 'You can also moderate the comment from this screen using the Status box, where you can also change the timestamp of the comment.' ) . '</p>',
+					'<p>' . __( 'You can edit the information left in a comment if needed. This is often useful when you notice that a commenter has made a typographical error.' ) . '</p>' .
+					'<p>' . __( 'You can also moderate the comment from this screen using the Status box, where you can also change the timestamp of the comment.' ) . '</p>',
 			)
 		);
 
@@ -62,7 +62,8 @@ switch ( $action ) {
 
 		$comment_id = absint( $_GET['c'] );
 
-		if ( ! $comment = get_comment( $comment_id ) ) {
+		$comment = get_comment( $comment_id );
+		if ( ! $comment ) {
 			comment_footer_die( __( 'Invalid comment ID.' ) . sprintf( ' <a href="%s">' . __( 'Go back' ) . '</a>.', 'javascript:history.go(-1)' ) );
 		}
 
@@ -88,7 +89,8 @@ switch ( $action ) {
 
 		$comment_id = absint( $_GET['c'] );
 
-		if ( ! $comment = get_comment( $comment_id ) ) {
+		$comment = get_comment( $comment_id );
+		if ( ! $comment ) {
 			wp_redirect( admin_url( 'edit-comments.php?error=1' ) );
 			die();
 		}
@@ -260,7 +262,8 @@ switch ( $action ) {
 
 		$noredir = isset( $_REQUEST['noredir'] );
 
-		if ( ! $comment = get_comment( $comment_id ) ) {
+		$comment = get_comment( $comment_id );
+		if ( ! $comment ) {
 			comment_footer_die( __( 'Invalid comment ID.' ) . sprintf( ' <a href="%s">' . __( 'Go back' ) . '</a>.', 'edit-comments.php' ) );
 		}
 		if ( ! current_user_can( 'edit_comment', $comment->comment_ID ) ) {

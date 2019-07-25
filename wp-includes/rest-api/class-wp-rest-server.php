@@ -310,7 +310,7 @@ class WP_REST_Server {
 		$request->set_body_params( wp_unslash( $_POST ) );
 		$request->set_file_params( $_FILES );
 		$request->set_headers( $this->get_headers( wp_unslash( $_SERVER ) ) );
-		$request->set_body( $this->get_raw_data() );
+		$request->set_body( self::get_raw_data() );
 
 		/*
 		 * HTTP method override for clients that can't use PUT/PATCH/DELETE. First, we check
@@ -437,7 +437,7 @@ class WP_REST_Server {
 	 */
 	public function response_to_data( $response, $embed ) {
 		$data  = $response->get_data();
-		$links = $this->get_compact_response_links( $response );
+		$links = self::get_compact_response_links( $response );
 
 		if ( ! empty( $links ) ) {
 			// Convert links to part of the data.
@@ -1279,19 +1279,7 @@ class WP_REST_Server {
 	 * @param string $key Header key.
 	 */
 	public function remove_header( $key ) {
-		if ( function_exists( 'header_remove' ) ) {
-			// In PHP 5.3+ there is a way to remove an already set header.
-			header_remove( $key );
-		} else {
-			// In PHP 5.2, send an empty header, but only as a last resort to
-			// override a header already sent.
-			foreach ( headers_list() as $header ) {
-				if ( 0 === stripos( $header, "$key:" ) ) {
-					$this->send_header( $key, '' );
-					break;
-				}
-			}
-		}
+		header_remove( $key );
 	}
 
 	/**

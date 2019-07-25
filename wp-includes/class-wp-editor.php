@@ -158,7 +158,8 @@ final class _WP_Editors {
 		$editor_class   = ' class="' . trim( esc_attr( $set['editor_class'] ) . ' wp-editor-area' ) . '"';
 		$tabindex       = $set['tabindex'] ? ' tabindex="' . (int) $set['tabindex'] . '"' : '';
 		$default_editor = 'html';
-		$buttons        = $autocomplete = '';
+		$buttons        = '';
+		$autocomplete   = '';
 		$editor_id_attr = esc_attr( $editor_id );
 
 		if ( $set['drag_drop_upload'] ) {
@@ -437,7 +438,8 @@ final class _WP_Editors {
 					 */
 					$plugins = array_unique( apply_filters( 'tiny_mce_plugins', $plugins ) );
 
-					if ( ( $key = array_search( 'spellchecker', $plugins ) ) !== false ) {
+					$key = array_search( 'spellchecker', $plugins );
+					if ( false !== $key ) {
 						// Remove 'spellchecker' from the internal plugins if added with 'tiny_mce_plugins' filter to prevent errors.
 						// It can be added with 'mce_external_plugins'.
 						unset( $plugins[ $key ] );
@@ -538,18 +540,24 @@ final class _WP_Editors {
 					$settings['wpeditimage_disable_captions'] = true;
 				}
 
-				$mce_css       = $settings['content_css'];
-				$editor_styles = get_editor_stylesheets();
+				$mce_css = $settings['content_css'];
 
-				if ( ! empty( $editor_styles ) ) {
-					// Force urlencoding of commas.
-					foreach ( $editor_styles as $key => $url ) {
-						if ( strpos( $url, ',' ) !== false ) {
-							$editor_styles[ $key ] = str_replace( ',', '%2C', $url );
+				// The `editor-style.css` added by the theme is generally intended for the editor instance on the Edit Post screen.
+				// Plugins that use wp_editor() on the front-end can decide whether to add the theme stylesheet
+				// by using `get_editor_stylesheets()` and the `mce_css` or `tiny_mce_before_init` filters, see below.
+				if ( is_admin() ) {
+					$editor_styles = get_editor_stylesheets();
+
+					if ( ! empty( $editor_styles ) ) {
+						// Force urlencoding of commas.
+						foreach ( $editor_styles as $key => $url ) {
+							if ( strpos( $url, ',' ) !== false ) {
+								$editor_styles[ $key ] = str_replace( ',', '%2C', $url );
+							}
 						}
-					}
 
-					$mce_css .= ',' . implode( ',', $editor_styles );
+						$mce_css .= ',' . implode( ',', $editor_styles );
+					}
 				}
 
 				/**
@@ -581,7 +589,9 @@ final class _WP_Editors {
 				 * @param string $editor_id Unique editor identifier, e.g. 'content'.
 				 */
 				$mce_buttons   = apply_filters( 'teeny_mce_buttons', array( 'bold', 'italic', 'underline', 'blockquote', 'strikethrough', 'bullist', 'numlist', 'alignleft', 'aligncenter', 'alignright', 'undo', 'redo', 'link', 'fullscreen' ), $editor_id );
-				$mce_buttons_2 = $mce_buttons_3 = $mce_buttons_4 = array();
+				$mce_buttons_2 = array();
+				$mce_buttons_3 = array();
+				$mce_buttons_4 = array();
 			} else {
 				$mce_buttons = array( 'formatselect', 'bold', 'italic', 'bullist', 'numlist', 'blockquote', 'alignleft', 'aligncenter', 'alignright', 'link', 'wp_more', 'spellchecker' );
 
@@ -646,7 +656,8 @@ final class _WP_Editors {
 
 			$body_class = $editor_id;
 
-			if ( $post = get_post() ) {
+			$post = get_post();
+			if ( $post ) {
 				$body_class .= ' post-type-' . sanitize_html_class( $post->post_type ) . ' post-status-' . sanitize_html_class( $post->post_status );
 
 				if ( post_type_supports( $post->post_type, 'post-formats' ) ) {
@@ -1460,7 +1471,8 @@ final class _WP_Editors {
 		global $tinymce_version;
 
 		$tmce_on = ! empty( self::$mce_settings );
-		$mceInit = $qtInit = '';
+		$mceInit = '';
+		$qtInit  = '';
 
 		if ( $tmce_on ) {
 			foreach ( self::$mce_settings as $editor_id => $init ) {
@@ -1765,8 +1777,8 @@ final class _WP_Editors {
 					<div class="river-waiting">
 						<span class="spinner"></span>
 					</div>
-				 </div>
-			 </div>
+				</div>
+			</div>
 		</div>
 		<div class="submitbox">
 			<div id="wp-link-cancel">

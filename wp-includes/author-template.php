@@ -541,7 +541,8 @@ function wp_list_authors( $args = '' ) {
 function is_multi_author() {
 	global $wpdb;
 
-	if ( false === ( $is_multi_author = get_transient( 'is_multi_author' ) ) ) {
+	$is_multi_author = get_transient( 'is_multi_author' );
+	if ( false === $is_multi_author ) {
 		$rows            = (array) $wpdb->get_col( "SELECT DISTINCT post_author FROM $wpdb->posts WHERE post_type = 'post' AND post_status = 'publish' LIMIT 2" );
 		$is_multi_author = 1 < count( $rows ) ? 1 : 0;
 		set_transient( 'is_multi_author', $is_multi_author );
@@ -563,6 +564,6 @@ function is_multi_author() {
  * @since 3.2.0
  * @access private
  */
-function __clear_multi_author_cache() {
+function __clear_multi_author_cache() { //phpcs:ignore WordPress.NamingConventions.ValidFunctionName.FunctionDoubleUnderscore
 	delete_transient( 'is_multi_author' );
 }

@@ -35,15 +35,17 @@ function list_core_update( $update ) {
 	global $wp_local_package, $wpdb;
 	static $first_pass = true;
 
-	$wp_version = get_bloginfo( 'version' );
+	$wp_version     = get_bloginfo( 'version' );
+	$version_string = sprintf( '%s&ndash;<strong>%s</strong>', $update->current, $update->locale );
 
 	if ( 'en_US' == $update->locale && 'en_US' == get_locale() ) {
 		$version_string = $update->current;
-	} elseif ( 'en_US' == $update->locale && $update->packages->partial && $wp_version == $update->partial_version && ( $updates = get_core_updates() ) && 1 == count( $updates ) ) {
-		// If the only available update is a partial builds, it doesn't need a language-specific version string.
-		$version_string = $update->current;
-	} else {
-		$version_string = sprintf( '%s&ndash;<strong>%s</strong>', $update->current, $update->locale );
+	} elseif ( 'en_US' == $update->locale && $update->packages->partial && $wp_version == $update->partial_version ) {
+		$updates = get_core_updates();
+		if ( $updates && 1 == count( $updates ) ) {
+			// If the only available update is a partial builds, it doesn't need a language-specific version string.
+			$version_string = $update->current;
+		}
 	}
 
 	$current = false;
@@ -204,7 +206,9 @@ function core_upgrade_preamble() {
 			}
 		}
 		echo '</h2>';
-	} else {
+	}
+
+	if ( isset( $updates[0]->version ) && version_compare( $updates[0]->version, $wp_version, '>' ) ) {
 		echo '<div class="notice notice-warning"><p>';
 		_e( '<strong>Important:</strong> Before updating, please <a href="https://codex.wordpress.org/WordPress_Backups">back up your database and files</a>. For help with updates, visit the <a href="https://codex.wordpress.org/Updating_WordPress">Updating WordPress</a> Codex page.' );
 		echo '</p></div>';
@@ -241,6 +245,11 @@ function core_upgrade_preamble() {
 	dismissed_updates();
 }
 
+/**
+ * Display the upgrade plugins form.
+ *
+ * @since 2.7.0
+ */
 function list_plugin_updates() {
 	$wp_version     = get_bloginfo( 'version' );
 	$cur_wp_version = preg_replace( '/-.*$/', '', $wp_version );
@@ -530,7 +539,8 @@ function do_core_upgrade( $reinstall = false ) {
 	<h1><?php _e( 'Update WordPress' ); ?></h1>
 	<?php
 
-	if ( false === ( $credentials = request_filesystem_credentials( $url, '', false, ABSPATH, array( 'version', 'locale' ), $allow_relaxed_file_ownership ) ) ) {
+	$credentials = request_filesystem_credentials( $url, '', false, ABSPATH, array( 'version', 'locale' ), $allow_relaxed_file_ownership );
+	if ( false === $credentials ) {
 		echo '</div>';
 		return;
 	}
@@ -875,5 +885,5 @@ if ( 'upgrade-core' == $action ) {
 	 *
 	 * @since 3.2.0
 	 */
-	do_action( "update-core-custom_{$action}" );
+	do_action( "update-core-custom_{$action}" );  // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores
 }

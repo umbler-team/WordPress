@@ -180,6 +180,7 @@ class wpdb {
 	 * @since 1.5.0
 	 * @since 2.5.0 The third element in each query log was added to record the calling functions.
 	 * @since 5.1.0 The fourth element in each query log was added to record the start time.
+	 * @since 5.3.0 The fifth element in each query log was added to record custom data.
 	 *
 	 * @var array[] {
 	 *     Array of queries that were executed.
@@ -191,6 +192,7 @@ class wpdb {
 	 *         @type float  $1 Total time spent on the query, in seconds.
 	 *         @type string $2 Comma separated list of the calling functions.
 	 *         @type float  $3 Unix timestamp of the time at the start of the query.
+	 *         @type array  $4 Custom query data.
 	 *     }
 	 * }
 	 */
@@ -1267,17 +1269,19 @@ class wpdb {
 	 *   %f (float)
 	 *   %s (string)
 	 *
-	 * All placeholders MUST be left unquoted in the query string. A corresponding argument MUST be passed for each placeholder.
+	 * All placeholders MUST be left unquoted in the query string. A corresponding argument
+	 * MUST be passed for each placeholder.
 	 *
-	 * For compatibility with old behavior, numbered or formatted string placeholders (eg, %1$s, %5s) will not have quotes
-	 * added by this function, so should be passed with appropriate quotes around them for your usage.
+	 * For compatibility with old behavior, numbered or formatted string placeholders (eg, %1$s, %5s)
+	 * will not have quotes added by this function, so should be passed with appropriate quotes around
+	 * them for your usage.
 	 *
 	 * Literal percentage signs (%) in the query string must be written as %%. Percentage wildcards (for example,
 	 * to use in LIKE syntax) must be passed via a substitution argument containing the complete LIKE string, these
 	 * cannot be inserted directly in the query string. Also see wpdb::esc_like().
 	 *
-	 * Arguments may be passed as individual arguments to the method, or as a single array containing all arguments. A combination
-	 * of the two is not supported.
+	 * Arguments may be passed as individual arguments to the method, or as a single array containing
+	 * all arguments. A combination of the two is not supported.
 	 *
 	 * Examples:
 	 *     $wpdb->prepare( "SELECT * FROM `table` WHERE `column` = %s AND `field` = %d OR `other_field` LIKE %s", array( 'foo', 1337, '%bar' ) );
@@ -1287,12 +1291,15 @@ class wpdb {
 	 * @since 2.3.0
 	 *
 	 * @param string      $query   Query statement with sprintf()-like placeholders
-	 * @param array|mixed $args    The array of variables to substitute into the query's placeholders if being called with an array of arguments,
-	 *                             or the first variable to substitute into the query's placeholders if being called with individual arguments.
-	 * @param mixed       ...$args further variables to substitute into the query's placeholders if being called wih individual arguments.
+	 * @param array|mixed $args    The array of variables to substitute into the query's placeholders
+	 *                             if being called with an array of arguments, or the first variable
+	 *                             to substitute into the query's placeholders if being called with
+	 *                             individual arguments.
+	 * @param mixed       ...$args Further variables to substitute into the query's placeholders
+	 *                             if being called with individual arguments.
 	 * @return string|void Sanitized query string, if there is a query to prepare.
 	 */
-	public function prepare( $query, $args ) {
+	public function prepare( $query, ...$args ) {
 		if ( is_null( $query ) ) {
 			return;
 		}
@@ -1302,9 +1309,6 @@ class wpdb {
 			wp_load_translations_early();
 			_doing_it_wrong( 'wpdb::prepare', sprintf( __( 'The query argument of %s must have a placeholder.' ), 'wpdb::prepare()' ), '3.9.0' );
 		}
-
-		$args = func_get_args();
-		array_shift( $args );
 
 		// If args were passed as an array (as in vsprintf), move them up.
 		$passed_as_array = false;
@@ -1376,7 +1380,7 @@ class wpdb {
 		}
 
 		array_walk( $args, array( $this, 'escape_by_ref' ) );
-		$query = @vsprintf( $query, $args );
+		$query = vsprintf( $query, $args );
 
 		return $this->add_placeholder_escape( $query );
 	}
@@ -1438,7 +1442,8 @@ class wpdb {
 
 		wp_load_translations_early();
 
-		if ( $caller = $this->get_caller() ) {
+		$caller = $this->get_caller();
+		if ( $caller ) {
 			/* translators: 1: Database error message, 2: SQL query, 3: Name of the calling function */
 			$error_str = sprintf( __( 'WordPress database error %1$s for query %2$s made by %3$s' ), $str, $this->last_query, $caller );
 		} else {
@@ -1543,7 +1548,8 @@ class wpdb {
 		$this->last_result   = array();
 		$this->col_info      = null;
 		$this->last_query    = null;
-		$this->rows_affected = $this->num_rows = 0;
+		$this->rows_affected = 0;
+		$this->num_rows      = 0;
 		$this->last_error    = '';
 
 		if ( $this->use_mysqli && $this->result instanceof mysqli_result ) {
@@ -1594,7 +1600,8 @@ class wpdb {
 			$socket  = null;
 			$is_ipv6 = false;
 
-			if ( $host_data = $this->parse_db_host( $this->dbhost ) ) {
+			$host_data = $this->parse_db_host( $this->dbhost );
+			if ( $host_data ) {
 				list( $host, $port, $socket, $is_ipv6 ) = $host_data;
 			}
 
@@ -1611,6 +1618,7 @@ class wpdb {
 			if ( WP_DEBUG ) {
 				mysqli_real_connect( $this->dbh, $host, $this->dbuser, $this->dbpassword, null, $port, $socket, $client_flags );
 			} else {
+				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 				@mysqli_real_connect( $this->dbh, $host, $this->dbuser, $this->dbpassword, null, $port, $socket, $client_flags );
 			}
 
@@ -1619,10 +1627,10 @@ class wpdb {
 
 				/*
 				 * It's possible ext/mysqli is misconfigured. Fall back to ext/mysql if:
-				  *  - We haven't previously connected, and
-				  *  - WP_USE_EXT_MYSQL isn't set to false, and
-				  *  - ext/mysql is loaded.
-				  */
+				 *  - We haven't previously connected, and
+				 *  - WP_USE_EXT_MYSQL isn't set to false, and
+				 *  - ext/mysql is loaded.
+				 */
 				$attempt_fallback = true;
 
 				if ( $this->has_connected ) {
@@ -1642,6 +1650,7 @@ class wpdb {
 			if ( WP_DEBUG ) {
 				$this->dbh = mysql_connect( $this->dbhost, $this->dbuser, $this->dbpassword, $new_link, $client_flags );
 			} else {
+				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 				$this->dbh = @mysql_connect( $this->dbhost, $this->dbuser, $this->dbpassword, $new_link, $client_flags );
 			}
 		}
@@ -1666,8 +1675,8 @@ class wpdb {
 
 			$message .= "<ul>\n";
 			$message .= '<li>' . __( 'Are you sure you have the correct username and password?' ) . "</li>\n";
-			$message .= '<li>' . __( 'Are you sure that you have typed the correct hostname?' ) . "</li>\n";
-			$message .= '<li>' . __( 'Are you sure that the database server is running?' ) . "</li>\n";
+			$message .= '<li>' . __( 'Are you sure you have typed the correct hostname?' ) . "</li>\n";
+			$message .= '<li>' . __( 'Are you sure the database server is running?' ) . "</li>\n";
 			$message .= "</ul>\n";
 
 			$message .= '<p>' . sprintf(
@@ -1824,8 +1833,8 @@ class wpdb {
 		) . "</p>\n";
 
 		$message .= "<ul>\n";
-		$message .= '<li>' . __( 'Are you sure that the database server is running?' ) . "</li>\n";
-		$message .= '<li>' . __( 'Are you sure that the database server is not under particularly heavy load?' ) . "</li>\n";
+		$message .= '<li>' . __( 'Are you sure the database server is running?' ) . "</li>\n";
+		$message .= '<li>' . __( 'Are you sure the database server is not under particularly heavy load?' ) . "</li>\n";
 		$message .= "</ul>\n";
 
 		$message .= '<p>' . sprintf(
@@ -2011,13 +2020,53 @@ class wpdb {
 		$this->num_queries++;
 
 		if ( defined( 'SAVEQUERIES' ) && SAVEQUERIES ) {
-			$this->queries[] = array(
+			$this->log_query(
 				$query,
 				$this->timer_stop(),
 				$this->get_caller(),
 				$this->time_start,
+				array()
 			);
 		}
+	}
+
+	/**
+	 * Logs query data.
+	 *
+	 * @since 5.3.0
+	 *
+	 * @param string $query           The query's SQL.
+	 * @param float  $query_time      Total time spent on the query, in seconds.
+	 * @param string $query_callstack Comma separated list of the calling functions.
+	 * @param float  $query_start     Unix timestamp of the time at the start of the query.
+	 * @param array  $query_data      Custom query data.
+	 * }
+	 */
+	public function log_query( $query, $query_time, $query_callstack, $query_start, $query_data ) {
+		/**
+		 * Filters the custom query data being logged.
+		 *
+		 * Caution should be used when modifying any of this data, it is recommended that any additional
+		 * information you need to store about a query be added as a new associative entry to the fourth
+		 * element $query_data.
+		 *
+		 * @since 5.3.0
+		 *
+		 * @param array  $query_data      Custom query data.
+		 * @param string $query           The query's SQL.
+		 * @param float  $query_time      Total time spent on the query, in seconds.
+		 * @param string $query_callstack Comma separated list of the calling functions.
+		 * @param float  $query_start     Unix timestamp of the time at the start of the query.
+		 */
+		$query_data = apply_filters( 'log_query_custom_data', $query_data, $query, $query_time, $query_callstack, $query_start );
+
+		$this->queries[] = array(
+			$query,
+			$query_time,
+			$query_callstack,
+			$query_start,
+			$query_data,
+		);
 	}
 
 	/**
@@ -2161,7 +2210,8 @@ class wpdb {
 			return false;
 		}
 
-		$formats = $values = array();
+		$formats = array();
+		$values  = array();
 		foreach ( $data as $value ) {
 			if ( is_null( $value['value'] ) ) {
 				$formats[] = 'NULL';
@@ -2225,7 +2275,9 @@ class wpdb {
 			return false;
 		}
 
-		$fields = $conditions = $values = array();
+		$fields     = array();
+		$conditions = array();
+		$values     = array();
 		foreach ( $data as $field => $value ) {
 			if ( is_null( $value['value'] ) ) {
 				$fields[] = "`$field` = NULL";
@@ -2286,7 +2338,8 @@ class wpdb {
 			return false;
 		}
 
-		$conditions = $values = array();
+		$conditions = array();
+		$values     = array();
 		foreach ( $where as $field => $value ) {
 			if ( is_null( $value['value'] ) ) {
 				$conditions[] = "`$field` IS NULL";
@@ -2358,7 +2411,8 @@ class wpdb {
 	 *               of 'value' and 'format' keys.
 	 */
 	protected function process_field_formats( $data, $format ) {
-		$formats = $original_formats = (array) $format;
+		$formats          = (array) $format;
+		$original_formats = $formats;
 
 		foreach ( $data as $field => $value ) {
 			$value = array(
@@ -2650,7 +2704,8 @@ class wpdb {
 			return $this->table_charset[ $tablekey ];
 		}
 
-		$charsets = $columns = array();
+		$charsets = array();
+		$columns  = array();
 
 		$table_parts = explode( '.', $table );
 		$table       = '`' . implode( '`.`', $table_parts ) . '`';
@@ -3048,7 +3103,8 @@ class wpdb {
 			}
 
 			// We couldn't use any local conversions, send it to the DB.
-			$value['db'] = $db_check_string = true;
+			$value['db']     = true;
+			$db_check_string = true;
 		}
 		unset( $value ); // Remove by reference.
 
@@ -3057,7 +3113,7 @@ class wpdb {
 			foreach ( $data as $col => $value ) {
 				if ( ! empty( $value['db'] ) ) {
 					// We're going to need to truncate by characters or bytes, depending on the length value we have.
-					if ( 'byte' === $value['length']['type'] ) {
+					if ( isset( $value['length']['type'] ) && 'byte' === $value['length']['type'] ) {
 						// Using binary causes LEFT() to truncate by bytes.
 						$charset = 'binary';
 					} else {

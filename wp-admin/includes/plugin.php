@@ -31,6 +31,8 @@
  *     Network: Optional. Specify "Network: true" to require that a plugin is activated
  *          across all sites in an installation. This will prevent a plugin from being
  *          activated on a single site when Multisite is enabled.
+ *     Requires at least: Optional. Specify the minimum required WordPress version.
+ *     Requires PHP: Optional. Specify the minimum required PHP version.
  *      * / # Remove the space to close comment
  *
  * Some users have issues with opening large files and manipulating the contents
@@ -46,6 +48,7 @@
  * reading.
  *
  * @since 1.5.0
+ * @since 5.3.0 Added support for `Requires at least` and `Requires PHP`.
  *
  * @param string $plugin_file Absolute path to the main plugin file.
  * @param bool   $markup      Optional. If the returned data should have HTML markup applied.
@@ -63,6 +66,8 @@
  *     @type string $TextDomain  Plugin textdomain.
  *     @type string $DomainPath  Plugins relative directory path to .mo files.
  *     @type bool   $Network     Whether the plugin can only be activated network-wide.
+ *     @type string $RequiresWP  Minimum required version of WordPress.
+ *     @type string $RequiresPHP Minimum required version of PHP.
  * }
  */
 function get_plugin_data( $plugin_file, $markup = true, $translate = true ) {
@@ -77,6 +82,8 @@ function get_plugin_data( $plugin_file, $markup = true, $translate = true ) {
 		'TextDomain'  => 'Text Domain',
 		'DomainPath'  => 'Domain Path',
 		'Network'     => 'Network',
+		'RequiresWP'  => 'Requires at least',
+		'RequiresPHP' => 'Requires PHP',
 		// Site Wide Only is deprecated in favor of Network.
 		'_sitewide'   => 'Site Wide Only',
 	);
@@ -145,7 +152,8 @@ function _get_plugin_data_markup_translate( $plugin_file, $plugin_data, $markup 
 
 	// Translate fields
 	if ( $translate ) {
-		if ( $textdomain = $plugin_data['TextDomain'] ) {
+		$textdomain = $plugin_data['TextDomain'];
+		if ( $textdomain ) {
 			if ( ! is_textdomain_loaded( $textdomain ) ) {
 				if ( $plugin_data['DomainPath'] ) {
 					load_plugin_textdomain( $textdomain, false, dirname( $plugin_file ) . $plugin_data['DomainPath'] );
@@ -357,7 +365,8 @@ function get_mu_plugins() {
 	if ( ! is_dir( WPMU_PLUGIN_DIR ) ) {
 		return $wp_plugins;
 	}
-	if ( $plugins_dir = @ opendir( WPMU_PLUGIN_DIR ) ) {
+	$plugins_dir = @opendir( WPMU_PLUGIN_DIR );
+	if ( $plugins_dir ) {
 		while ( ( $file = readdir( $plugins_dir ) ) !== false ) {
 			if ( substr( $file, -4 ) == '.php' ) {
 				$plugin_files[] = $file;
@@ -367,7 +376,7 @@ function get_mu_plugins() {
 		return $wp_plugins;
 	}
 
-	@closedir( $plugins_dir );
+	closedir( $plugins_dir );
 
 	if ( empty( $plugin_files ) ) {
 		return $wp_plugins;
@@ -424,7 +433,8 @@ function get_dropins() {
 	$_dropins = _get_dropins();
 
 	// These exist in the wp-content directory
-	if ( $plugins_dir = @ opendir( WP_CONTENT_DIR ) ) {
+	$plugins_dir = @opendir( WP_CONTENT_DIR );
+	if ( $plugins_dir ) {
 		while ( ( $file = readdir( $plugins_dir ) ) !== false ) {
 			if ( isset( $_dropins[ $file ] ) ) {
 				$plugin_files[] = $file;
@@ -434,7 +444,7 @@ function get_dropins() {
 		return $dropins;
 	}
 
-	@closedir( $plugins_dir );
+	closedir( $plugins_dir );
 
 	if ( empty( $plugin_files ) ) {
 		return $dropins;
@@ -726,8 +736,9 @@ function deactivate_plugins( $plugins, $silent = false, $network_wide = null ) {
 	if ( is_multisite() ) {
 		$network_current = get_site_option( 'active_sitewide_plugins', array() );
 	}
-	$current = get_option( 'active_plugins', array() );
-	$do_blog = $do_network = false;
+	$current    = get_option( 'active_plugins', array() );
+	$do_blog    = false;
+	$do_network = false;
 
 	foreach ( (array) $plugins as $plugin ) {
 		$plugin = plugin_basename( trim( $plugin ) );
@@ -985,7 +996,8 @@ function delete_plugins( $plugins, $deprecated = '' ) {
 	}
 
 	// Remove deleted plugins from the plugin updates list.
-	if ( $current = get_site_transient( 'update_plugins' ) ) {
+	$current = get_site_transient( 'update_plugins' );
+	if ( $current ) {
 		// Don't remove the plugins that weren't deleted.
 		$deleted = array_diff( $plugins, $errors );
 
@@ -1085,6 +1097,10 @@ function validate_plugin( $plugin ) {
  */
 function validate_plugin_requirements( $plugin ) {
 	$readme_file = WP_PLUGIN_DIR . '/' . dirname( $plugin ) . '/readme.txt';
+	$plugin_data = array(
+		'requires'     => '',
+		'requires_php' => '',
+	);
 
 	if ( file_exists( $readme_file ) ) {
 		$plugin_data = get_file_data(
@@ -1095,14 +1111,16 @@ function validate_plugin_requirements( $plugin ) {
 			),
 			'plugin'
 		);
-	} else {
-		return true;
 	}
+
+	$plugin_data = array_merge( $plugin_data, get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin ) );
+
+	// Check for headers in the plugin's PHP file, give precedence to the plugin headers.
+	$plugin_data['requires']     = ! empty( $plugin_data['RequiresWP'] ) ? $plugin_data['RequiresWP'] : $plugin_data['requires'];
+	$plugin_data['requires_php'] = ! empty( $plugin_data['RequiresPHP'] ) ? $plugin_data['RequiresPHP'] : $plugin_data['requires_php'];
 
 	$plugin_data['wp_compatible']  = is_wp_version_compatible( $plugin_data['requires'] );
 	$plugin_data['php_compatible'] = is_php_version_compatible( $plugin_data['requires_php'] );
-
-	$plugin_data = array_merge( $plugin_data, get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin ) );
 
 	if ( ! $plugin_data['wp_compatible'] && ! $plugin_data['php_compatible'] ) {
 		return new WP_Error(
@@ -1806,7 +1824,8 @@ function get_admin_page_title() {
 
 	$hook = get_plugin_page_hook( $plugin_page, $pagenow );
 
-	$parent = $parent1 = get_admin_page_parent();
+	$parent  = get_admin_page_parent();
+	$parent1 = $parent;
 
 	if ( empty( $parent ) ) {
 		foreach ( (array) $menu as $menu_array ) {

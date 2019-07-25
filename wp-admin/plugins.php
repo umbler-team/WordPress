@@ -170,7 +170,7 @@ if ( $action ) {
 				error_reporting( E_CORE_ERROR | E_CORE_WARNING | E_COMPILE_ERROR | E_ERROR | E_WARNING | E_PARSE | E_USER_ERROR | E_USER_WARNING | E_RECOVERABLE_ERROR );
 			}
 
-			@ini_set( 'display_errors', true ); //Ensure that Fatal errors are displayed.
+			ini_set( 'display_errors', true ); //Ensure that Fatal errors are displayed.
 			// Go back to "sandbox" scope so we get the same errors as before
 			plugin_sandbox_scrape( $plugin );
 			/** This action is documented in wp-admin/includes/plugin.php */
@@ -291,7 +291,8 @@ if ( $action ) {
 					$plugin_slug = dirname( $plugin );
 
 					if ( '.' == $plugin_slug ) {
-						if ( $data = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin ) ) {
+						$data = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin );
+						if ( $data ) {
 							$plugin_info[ $plugin ]                     = $data;
 							$plugin_info[ $plugin ]['is_uninstallable'] = is_uninstallable_plugin( $plugin );
 							if ( ! $plugin_info[ $plugin ]['Network'] ) {
@@ -300,7 +301,8 @@ if ( $action ) {
 						}
 					} else {
 						// Get plugins list from that folder.
-						if ( $folder_plugins = get_plugins( '/' . $plugin_slug ) ) {
+						$folder_plugins = get_plugins( '/' . $plugin_slug );
+						if ( $folder_plugins ) {
 							foreach ( $folder_plugins as $plugin_file => $data ) {
 								$plugin_info[ $plugin_file ]                     = _get_plugin_data_markup_translate( $plugin_file, $data );
 								$plugin_info[ $plugin_file ]['is_uninstallable'] = is_uninstallable_plugin( $plugin );
@@ -344,9 +346,9 @@ if ( $action ) {
 				<p>
 				<?php
 				if ( $data_to_delete ) {
-					_e( 'Are you sure you wish to delete these files and data?' );
+					_e( 'Are you sure you want to delete these files and data?' );
 				} else {
-					_e( 'Are you sure you wish to delete these files?' );
+					_e( 'Are you sure you want to delete these files?' );
 				}
 				?>
 				</p>
@@ -416,7 +418,7 @@ if ( $action ) {
 				$sendback = wp_get_referer();
 
 				/** This action is documented in wp-admin/edit-comments.php */
-				$sendback = apply_filters( 'handle_bulk_actions-' . get_current_screen()->id, $sendback, $action, $plugins );
+				$sendback = apply_filters( 'handle_bulk_actions-' . get_current_screen()->id, $sendback, $action, $plugins );  // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores
 				wp_safe_redirect( $sendback );
 				exit;
 			}
@@ -436,11 +438,11 @@ get_current_screen()->add_help_tab(
 		'id'      => 'overview',
 		'title'   => __( 'Overview' ),
 		'content' =>
-				 '<p>' . __( 'Plugins extend and expand the functionality of WordPress. Once a plugin is installed, you may activate it or deactivate it here.' ) . '</p>' .
-				 '<p>' . __( 'The search for installed plugins will search for terms in their name, description, or author.' ) . ' <span id="live-search-desc" class="hide-if-no-js">' . __( 'The search results will be updated as you type.' ) . '</span></p>' .
+				'<p>' . __( 'Plugins extend and expand the functionality of WordPress. Once a plugin is installed, you may activate it or deactivate it here.' ) . '</p>' .
+				'<p>' . __( 'The search for installed plugins will search for terms in their name, description, or author.' ) . ' <span id="live-search-desc" class="hide-if-no-js">' . __( 'The search results will be updated as you type.' ) . '</span></p>' .
 				'<p>' . sprintf(
 					/* translators: %s: WordPress Plugin Directory URL */
-					 __( 'If you would like to see more plugins to choose from, click on the &#8220;Add New&#8221; button and you will be able to browse or search for additional plugins from the <a href="%s">WordPress Plugin Directory</a>. Plugins in the WordPress Plugin Directory are designed and developed by third parties, and are compatible with the license WordPress uses. Oh, and they&#8217;re free!' ),
+					__( 'If you would like to see more plugins to choose from, click on the &#8220;Add New&#8221; button and you will be able to browse or search for additional plugins from the <a href="%s">WordPress Plugin Directory</a>. Plugins in the WordPress Plugin Directory are designed and developed by third parties, and are compatible with the license WordPress uses. Oh, and they&#8217;re free!' ),
 					__( 'https://wordpress.org/plugins/' )
 				) . '</p>',
 	)
@@ -450,10 +452,10 @@ get_current_screen()->add_help_tab(
 		'id'      => 'compatibility-problems',
 		'title'   => __( 'Troubleshooting' ),
 		'content' =>
-				 '<p>' . __( 'Most of the time, plugins play nicely with the core of WordPress and with other plugins. Sometimes, though, a plugin&#8217;s code will get in the way of another plugin, causing compatibility issues. If your site starts doing strange things, this may be the problem. Try deactivating all your plugins and re-activating them in various combinations until you isolate which one(s) caused the issue.' ) . '</p>' .
+				'<p>' . __( 'Most of the time, plugins play nicely with the core of WordPress and with other plugins. Sometimes, though, a plugin&#8217;s code will get in the way of another plugin, causing compatibility issues. If your site starts doing strange things, this may be the problem. Try deactivating all your plugins and re-activating them in various combinations until you isolate which one(s) caused the issue.' ) . '</p>' .
 				'<p>' . sprintf(
 					/* translators: WP_PLUGIN_DIR constant value */
-					 __( 'If something goes wrong with a plugin and you can&#8217;t use WordPress, delete or rename that file in the %s directory and it will be automatically deactivated.' ),
+					__( 'If something goes wrong with a plugin and you can&#8217;t use WordPress, delete or rename that file in the %s directory and it will be automatically deactivated.' ),
 					'<code>' . WP_PLUGIN_DIR . '</code>'
 				) . '</p>',
 	)

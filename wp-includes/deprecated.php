@@ -247,8 +247,8 @@ function user_can_edit_post($user_id, $post_id, $blog_id = 1) {
 	$post_author_data = get_userdata($post->post_author);
 
 	if ( (($user_id == $post_author_data->ID) && !($post->post_status == 'publish' && $author_data->user_level < 2))
-			 || ($author_data->user_level > $post_author_data->user_level)
-			 || ($author_data->user_level >= 10) ) {
+			|| ($author_data->user_level > $post_author_data->user_level)
+			|| ($author_data->user_level >= 10) ) {
 		return true;
 	} else {
 		return false;
@@ -393,8 +393,8 @@ function user_can_edit_user($user_id, $other_user) {
  * @param int $show_updated Optional. Whether to show last updated timestamp
  */
 function get_linksbyname($cat_name = "noname", $before = '', $after = '<br />', $between = " ", $show_images = true, $orderby = 'id',
-						 $show_description = true, $show_rating = false,
-						 $limit = -1, $show_updated = 0) {
+						$show_description = true, $show_rating = false,
+						$limit = -1, $show_updated = 0) {
 	_deprecated_function( __FUNCTION__, '2.1.0', 'get_bookmarks()' );
 
 	$cat_id = -1;
@@ -430,9 +430,9 @@ function wp_get_linksbyname($category, $args = '') {
 		'title_li' => '',
 	);
 
-	$r = wp_parse_args( $args, $defaults );
+	$parsed_args = wp_parse_args( $args, $defaults );
 
-	return wp_list_bookmarks($r);
+	return wp_list_bookmarks($parsed_args);
 }
 
 /**
@@ -565,7 +565,7 @@ function get_linksbyname_withrating($cat_name = "noname", $before = '', $after =
  * @param int $show_updated Whether to show last updated timestamp
  */
 function get_links_withrating($category = -1, $before = '', $after = '<br />', $between = " ", $show_images = true,
-							  $orderby = 'id', $show_description = true, $limit = -1, $show_updated = 0) {
+							$orderby = 'id', $show_description = true, $limit = -1, $show_updated = 0) {
 	_deprecated_function( __FUNCTION__, '2.1.0', 'get_bookmarks()' );
 
 	get_links($category, $before, $after, $between, $show_images, $orderby, $show_description, true, $limit, $show_updated);
@@ -613,8 +613,8 @@ function get_autotoggle($id = 0) {
  * @return false|null
  */
 function list_cats($optionall = 1, $all = 'All', $sort_column = 'ID', $sort_order = 'asc', $file = '', $list = true, $optiondates = 0,
-				   $optioncount = 0, $hide_empty = 1, $use_desc_for_title = 1, $children=false, $child_of=0, $categories=0,
-				   $recurse=0, $feed = '', $feed_image = '', $exclude = '', $hierarchical=false) {
+				$optioncount = 0, $hide_empty = 1, $use_desc_for_title = 1, $children=false, $child_of=0, $categories=0,
+				$recurse=0, $feed = '', $feed_image = '', $exclude = '', $hierarchical=false) {
 	_deprecated_function( __FUNCTION__, '2.1.0', 'wp_list_categories()' );
 
 	$query = compact('optionall', 'all', 'sort_column', 'sort_order', 'file', 'list', 'optiondates', 'optioncount', 'hide_empty', 'use_desc_for_title', 'children',
@@ -635,24 +635,24 @@ function list_cats($optionall = 1, $all = 'All', $sort_column = 'ID', $sort_orde
 function wp_list_cats($args = '') {
 	_deprecated_function( __FUNCTION__, '2.1.0', 'wp_list_categories()' );
 
-	$r = wp_parse_args( $args );
+	$parsed_args = wp_parse_args( $args );
 
 	// Map to new names.
-	if ( isset($r['optionall']) && isset($r['all']))
-		$r['show_option_all'] = $r['all'];
-	if ( isset($r['sort_column']) )
-		$r['orderby'] = $r['sort_column'];
-	if ( isset($r['sort_order']) )
-		$r['order'] = $r['sort_order'];
-	if ( isset($r['optiondates']) )
-		$r['show_last_update'] = $r['optiondates'];
-	if ( isset($r['optioncount']) )
-		$r['show_count'] = $r['optioncount'];
-	if ( isset($r['list']) )
-		$r['style'] = $r['list'] ? 'list' : 'break';
-	$r['title_li'] = '';
+	if ( isset($parsed_args['optionall']) && isset($parsed_args['all']))
+		$parsed_args['show_option_all'] = $parsed_args['all'];
+	if ( isset($parsed_args['sort_column']) )
+		$parsed_args['orderby'] = $parsed_args['sort_column'];
+	if ( isset($parsed_args['sort_order']) )
+		$parsed_args['order'] = $parsed_args['sort_order'];
+	if ( isset($parsed_args['optiondates']) )
+		$parsed_args['show_last_update'] = $parsed_args['optiondates'];
+	if ( isset($parsed_args['optioncount']) )
+		$parsed_args['show_count'] = $parsed_args['optioncount'];
+	if ( isset($parsed_args['list']) )
+		$parsed_args['style'] = $parsed_args['list'] ? 'list' : 'break';
+	$parsed_args['title_li'] = '';
 
-	return wp_list_categories($r);
+	return wp_list_categories($parsed_args);
 }
 
 /**
@@ -892,9 +892,9 @@ function wp_get_links($args = '') {
 		'title_li' => '',
 	);
 
-	$r = wp_parse_args( $args, $defaults );
+	$parsed_args = wp_parse_args( $args, $defaults );
 
-	return wp_list_bookmarks($r);
+	return wp_list_bookmarks($parsed_args);
 }
 
 /**
@@ -1923,7 +1923,7 @@ function get_attachment_icon( $id = 0, $fullsize = false, $max_dims = false ) {
 	// Do we need to constrain the image?
 	if ( ($max_dims = apply_filters('attachment_max_dims', $max_dims)) && file_exists($src_file) ) {
 
-		$imagesize = getimagesize($src_file);
+		$imagesize = @getimagesize($src_file);
 
 		if (($imagesize[0] > $max_dims[0]) || $imagesize[1] > $max_dims[1] ) {
 			$actual_aspect = $imagesize[0] / $imagesize[1];

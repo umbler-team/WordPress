@@ -523,7 +523,11 @@ function get_metadata( $meta_type, $object_id, $meta_key = '', $single = false )
 
 	if ( ! $meta_cache ) {
 		$meta_cache = update_meta_cache( $meta_type, array( $object_id ) );
-		$meta_cache = $meta_cache[ $object_id ];
+		if ( isset( $meta_cache[ $object_id ] ) ) {
+			$meta_cache = $meta_cache[ $object_id ];
+		} else {
+			$meta_cache = null;
+		}
 	}
 
 	if ( ! $meta_key ) {
@@ -699,7 +703,8 @@ function update_metadata_by_mid( $meta_type, $meta_id, $meta_value, $meta_key = 
 	}
 
 	// Fetch the meta and go on if it's found.
-	if ( $meta = get_metadata_by_mid( $meta_type, $meta_id ) ) {
+	$meta = get_metadata_by_mid( $meta_type, $meta_id );
+	if ( $meta ) {
 		$original_key = $meta->meta_key;
 		$object_id    = $meta->{$column};
 
@@ -811,7 +816,8 @@ function delete_metadata_by_mid( $meta_type, $meta_id ) {
 	}
 
 	// Fetch the meta and go on if it's found.
-	if ( $meta = get_metadata_by_mid( $meta_type, $meta_id ) ) {
+	$meta = get_metadata_by_mid( $meta_type, $meta_id );
+	if ( $meta ) {
 		$object_id = (int) $meta->{$column};
 
 		/** This action is documented in wp-includes/meta.php */

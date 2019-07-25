@@ -240,13 +240,13 @@ get_current_screen()->add_help_tab(
 		'id'      => 'user-roles',
 		'title'   => __( 'User Roles' ),
 		'content' => '<p>' . __( 'Here is a basic overview of the different user roles and the permissions associated with each one:' ) . '</p>' .
-							 '<ul>' .
-							 '<li>' . __( 'Subscribers can read comments/comment/receive newsletters, etc. but cannot create regular site content.' ) . '</li>' .
-							 '<li>' . __( 'Contributors can write and manage their posts but not publish posts or upload media files.' ) . '</li>' .
-							 '<li>' . __( 'Authors can publish and manage their own posts, and are able to upload files.' ) . '</li>' .
-							 '<li>' . __( 'Editors can publish posts, manage posts as well as manage other people&#8217;s posts, etc.' ) . '</li>' .
-							 '<li>' . __( 'Administrators have access to all the administration features.' ) . '</li>' .
-							 '</ul>',
+							'<ul>' .
+							'<li>' . __( 'Subscribers can read comments/comment/receive newsletters, etc. but cannot create regular site content.' ) . '</li>' .
+							'<li>' . __( 'Contributors can write and manage their posts but not publish posts or upload media files.' ) . '</li>' .
+							'<li>' . __( 'Authors can publish and manage their own posts, and are able to upload files.' ) . '</li>' .
+							'<li>' . __( 'Editors can publish posts, manage posts as well as manage other people&#8217;s posts, etc.' ) . '</li>' .
+							'<li>' . __( 'Administrators have access to all the administration features.' ) . '</li>' .
+							'</ul>',
 	)
 );
 
@@ -293,12 +293,17 @@ if ( isset( $_GET['update'] ) ) {
 				$messages[] = __( 'Invitation email sent to user. A confirmation link must be clicked for them to be added to your site.' );
 				break;
 			case 'addnoconfirmation':
-				if ( empty( $edit_link ) ) {
-					$messages[] = __( 'User has been added to your site.' );
-				} else {
-					/* translators: %s: edit page url */
-					$messages[] = sprintf( __( 'User has been added to your site. <a href="%s">Edit user</a>' ), $edit_link );
+				$message = __( 'User has been added to your site.' );
+
+				if ( $edit_link ) {
+					$message .= sprintf(
+						' <a href="%s">%s</a>',
+						$edit_link,
+						__( 'Edit user' )
+					);
 				}
+
+				$messages[] = $message;
 				break;
 			case 'addexisting':
 				$messages[] = __( 'That user is already a member of this site.' );

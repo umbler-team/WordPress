@@ -302,7 +302,12 @@ function twentyeleven_settings_field_link_color() {
 	<input type="button" class="pickcolor button hide-if-no-js" value="<?php esc_attr_e( 'Select a Color', 'twentyeleven' ); ?>" />
 	<div id="colorPickerDiv" style="z-index: 100; background:#eee; border:1px solid #ccc; position:absolute; display:none;"></div>
 	<br />
-	<span><?php printf( __( 'Default color: %s', 'twentyeleven' ), '<span id="default-color">' . twentyeleven_get_default_link_color( $options['color_scheme'] ) . '</span>' ); ?></span>
+	<span>
+	<?php
+	/* translators: link color */
+	printf( __( 'Default color: %s', 'twentyeleven' ), '<span id="default-color">' . twentyeleven_get_default_link_color( $options['color_scheme'] ) . '</span>' );
+	?>
+	</span>
 	<?php
 }
 
@@ -338,7 +343,12 @@ function twentyeleven_theme_options_render_page() {
 	<div class="wrap">
 		<?php screen_icon(); ?>
 		<?php $theme_name = function_exists( 'wp_get_theme' ) ? wp_get_theme() : get_current_theme(); ?>
-		<h2><?php printf( __( '%s Theme Options', 'twentyeleven' ), $theme_name ); ?></h2>
+		<h2>
+		<?php
+		/* translators: theme name */
+		printf( __( '%s Theme Options', 'twentyeleven' ), $theme_name );
+		?>
+		</h2>
 		<?php settings_errors(); ?>
 
 		<form method="post" action="options.php">
@@ -365,7 +375,8 @@ function twentyeleven_theme_options_render_page() {
  * @param array $input An array of form input.
  */
 function twentyeleven_theme_options_validate( $input ) {
-	$output = $defaults = twentyeleven_get_default_theme_options();
+	$defaults = twentyeleven_get_default_theme_options();
+	$output   = $defaults;
 
 	// Color scheme must be in our array of color scheme options
 	if ( isset( $input['color_scheme'] ) && array_key_exists( $input['color_scheme'], twentyeleven_color_schemes() ) ) {
@@ -373,7 +384,8 @@ function twentyeleven_theme_options_validate( $input ) {
 	}
 
 	// Our defaults for the link color may have changed, based on the color scheme.
-	$output['link_color'] = $defaults['link_color'] = twentyeleven_get_default_link_color( $output['color_scheme'] );
+	$defaults['link_color'] = twentyeleven_get_default_link_color( $output['color_scheme'] );
+	$output['link_color']   = $defaults['link_color'];
 
 	// Link color must be 3 or 6 hexadecimal characters
 	if ( isset( $input['link_color'] ) && preg_match( '/^#?([a-f0-9]{3}){1,2}$/i', $input['link_color'] ) ) {

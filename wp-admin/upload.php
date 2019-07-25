@@ -130,7 +130,8 @@ if ( $doaction ) {
 	}
 
 	$location = 'upload.php';
-	if ( $referer = wp_get_referer() ) {
+	$referer  = wp_get_referer();
+	if ( $referer ) {
 		if ( false !== strpos( $referer, 'upload.php' ) ) {
 			$location = remove_query_arg( array( 'trashed', 'untrashed', 'deleted', 'message', 'ids', 'posted' ), $referer );
 		}
@@ -198,7 +199,7 @@ if ( $doaction ) {
 			break;
 		default:
 			/** This action is documented in wp-admin/edit-comments.php */
-			$location = apply_filters( 'handle_bulk_actions-' . get_current_screen()->id, $location, $doaction, $post_ids );
+			$location = apply_filters( 'handle_bulk_actions-' . get_current_screen()->id, $location, $doaction, $post_ids ); // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores
 	}
 
 	wp_redirect( $location );
@@ -222,9 +223,9 @@ get_current_screen()->add_help_tab(
 		'id'      => 'overview',
 		'title'   => __( 'Overview' ),
 		'content' =>
-				 '<p>' . __( 'All the files you&#8217;ve uploaded are listed in the Media Library, with the most recent uploads listed first. You can use the Screen Options tab to customize the display of this screen.' ) . '</p>' .
-				 '<p>' . __( 'You can narrow the list by file type/status or by date using the dropdown menus above the media table.' ) . '</p>' .
-				 '<p>' . __( 'You can view your media in a simple visual grid or a list with columns. Switch between these views using the icons to the left above the media.' ) . '</p>',
+				'<p>' . __( 'All the files you&#8217;ve uploaded are listed in the Media Library, with the most recent uploads listed first. You can use the Screen Options tab to customize the display of this screen.' ) . '</p>' .
+				'<p>' . __( 'You can narrow the list by file type/status or by date using the dropdown menus above the media table.' ) . '</p>' .
+				'<p>' . __( 'You can view your media in a simple visual grid or a list with columns. Switch between these views using the icons to the left above the media.' ) . '</p>',
 	)
 );
 get_current_screen()->add_help_tab(
@@ -232,7 +233,7 @@ get_current_screen()->add_help_tab(
 		'id'      => 'actions-links',
 		'title'   => __( 'Available Actions' ),
 		'content' =>
-				 '<p>' . __( 'Hovering over a row reveals action links: Edit, Delete Permanently, and View. Clicking Edit or on the media file&#8217;s name displays a simple screen to edit that individual file&#8217;s metadata. Clicking Delete Permanently will delete the file from the media library (as well as from any posts to which it is currently attached). View will take you to the display page for that file.' ) . '</p>',
+				'<p>' . __( 'Hovering over a row reveals action links: Edit, Delete Permanently, and View. Clicking Edit or on the media file&#8217;s name displays a simple screen to edit that individual file&#8217;s metadata. Clicking Delete Permanently will delete the file from the media library (as well as from any posts to which it is currently attached). View will take you to the display page for that file.' ) . '</p>',
 	)
 );
 get_current_screen()->add_help_tab(
@@ -240,7 +241,7 @@ get_current_screen()->add_help_tab(
 		'id'      => 'attaching-files',
 		'title'   => __( 'Attaching Files' ),
 		'content' =>
-				 '<p>' . __( 'If a media file has not been attached to any content, you will see that in the Uploaded To column, and can click on Attach to launch a small popup that will allow you to search for existing content and attach the file.' ) . '</p>',
+				'<p>' . __( 'If a media file has not been attached to any content, you will see that in the Uploaded To column, and can click on Attach to launch a small popup that will allow you to search for existing content and attach the file.' ) . '</p>',
 	)
 );
 
@@ -286,7 +287,8 @@ if ( ! empty( $_GET['posted'] ) ) {
 	$_SERVER['REQUEST_URI'] = remove_query_arg( array( 'posted' ), $_SERVER['REQUEST_URI'] );
 }
 
-if ( ! empty( $_GET['attached'] ) && $attached = absint( $_GET['attached'] ) ) {
+if ( ! empty( $_GET['attached'] ) && absint( $_GET['attached'] ) ) {
+	$attached = absint( $_GET['attached'] );
 	if ( 1 == $attached ) {
 		$message = __( 'Media file attached.' );
 	} else {
@@ -297,7 +299,8 @@ if ( ! empty( $_GET['attached'] ) && $attached = absint( $_GET['attached'] ) ) {
 	$_SERVER['REQUEST_URI'] = remove_query_arg( array( 'detach', 'attached' ), $_SERVER['REQUEST_URI'] );
 }
 
-if ( ! empty( $_GET['detach'] ) && $detached = absint( $_GET['detach'] ) ) {
+if ( ! empty( $_GET['detach'] ) && absint( $_GET['detach'] ) ) {
+	$detached = absint( $_GET['detach'] );
 	if ( 1 == $detached ) {
 		$message = __( 'Media file detached.' );
 	} else {
@@ -308,7 +311,8 @@ if ( ! empty( $_GET['detach'] ) && $detached = absint( $_GET['detach'] ) ) {
 	$_SERVER['REQUEST_URI'] = remove_query_arg( array( 'detach', 'attached' ), $_SERVER['REQUEST_URI'] );
 }
 
-if ( ! empty( $_GET['deleted'] ) && $deleted = absint( $_GET['deleted'] ) ) {
+if ( ! empty( $_GET['deleted'] ) && absint( $_GET['deleted'] ) ) {
+	$deleted = absint( $_GET['deleted'] );
 	if ( 1 == $deleted ) {
 		$message = __( 'Media file permanently deleted.' );
 	} else {
@@ -319,7 +323,8 @@ if ( ! empty( $_GET['deleted'] ) && $deleted = absint( $_GET['deleted'] ) ) {
 	$_SERVER['REQUEST_URI'] = remove_query_arg( array( 'deleted' ), $_SERVER['REQUEST_URI'] );
 }
 
-if ( ! empty( $_GET['trashed'] ) && $trashed = absint( $_GET['trashed'] ) ) {
+if ( ! empty( $_GET['trashed'] ) && absint( $_GET['trashed'] ) ) {
+	$trashed = absint( $_GET['trashed'] );
 	if ( 1 == $trashed ) {
 		$message = __( 'Media file moved to the trash.' );
 	} else {
@@ -331,7 +336,8 @@ if ( ! empty( $_GET['trashed'] ) && $trashed = absint( $_GET['trashed'] ) ) {
 	$_SERVER['REQUEST_URI'] = remove_query_arg( array( 'trashed' ), $_SERVER['REQUEST_URI'] );
 }
 
-if ( ! empty( $_GET['untrashed'] ) && $untrashed = absint( $_GET['untrashed'] ) ) {
+if ( ! empty( $_GET['untrashed'] ) && absint( $_GET['untrashed'] ) ) {
+	$untrashed = absint( $_GET['untrashed'] );
 	if ( 1 == $untrashed ) {
 		$message = __( 'Media file restored from the trash.' );
 	} else {

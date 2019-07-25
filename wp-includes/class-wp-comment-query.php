@@ -429,7 +429,8 @@ class WP_Comment_Query {
 		// Fetch full comment objects from the primed cache.
 		$_comments = array();
 		foreach ( $comment_ids as $comment_id ) {
-			if ( $_comment = get_comment( $comment_id ) ) {
+			$_comment = get_comment( $comment_id );
+			if ( $_comment ) {
 				$_comments[] = $_comment;
 			}
 		}
@@ -770,7 +771,9 @@ class WP_Comment_Query {
 			$join_posts_table = true;
 			foreach ( $post_fields as $field_name => $field_value ) {
 				// $field_value may be an array.
-				$esses                                     = array_fill( 0, count( (array) $field_value ), '%s' );
+				$esses = array_fill( 0, count( (array) $field_value ), '%s' );
+
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 				$this->sql_clauses['where'][ $field_name ] = $wpdb->prepare( " {$wpdb->posts}.{$field_name} IN (" . implode( ',', $esses ) . ')', $field_value );
 			}
 		}
@@ -791,7 +794,9 @@ class WP_Comment_Query {
 
 				$join_posts_table = true;
 
-				$esses                                     = array_fill( 0, count( $q_values ), '%s' );
+				$esses = array_fill( 0, count( $q_values ), '%s' );
+
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 				$this->sql_clauses['where'][ $field_name ] = $wpdb->prepare( " {$wpdb->posts}.{$field_name} IN (" . implode( ',', $esses ) . ')', $q_values );
 			}
 		}
@@ -950,8 +955,9 @@ class WP_Comment_Query {
 		$exclude_keys = array( 'parent', 'parent__in', 'parent__not_in' );
 		do {
 			// Parent-child relationships may be cached. Only query for those that are not.
-			$child_ids   = $uncached_parent_ids = array();
-			$_parent_ids = $levels[ $level ];
+			$child_ids           = array();
+			$uncached_parent_ids = array();
+			$_parent_ids         = $levels[ $level ];
 			foreach ( $_parent_ids as $parent_id ) {
 				$cache_key        = "get_comment_child_ids:$parent_id:$key:$last_changed";
 				$parent_child_ids = wp_cache_get( $cache_key, 'comment' );
@@ -1009,7 +1015,8 @@ class WP_Comment_Query {
 
 		// If a threaded representation was requested, build the tree.
 		if ( 'threaded' === $this->query_vars['hierarchical'] ) {
-			$threaded_comments = $ref = array();
+			$threaded_comments = array();
+			$ref               = array();
 			foreach ( $all_comments as $k => $c ) {
 				$_c = get_comment( $c->comment_ID );
 
