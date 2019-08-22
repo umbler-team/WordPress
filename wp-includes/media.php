@@ -3560,8 +3560,8 @@ function wp_prepare_attachment_for_js( $attachment ) {
  * @since 3.5.0
  *
  * @global int       $content_width
- * @global wpdb      $wpdb
- * @global WP_Locale $wp_locale
+ * @global wpdb      $wpdb          WordPress database abstraction object.
+ * @global WP_Locale $wp_locale     WordPress date and time locale object.
  *
  * @param array $args {
  *     Arguments for enqueuing media scripts.
@@ -4307,10 +4307,11 @@ function wp_media_personal_data_exporter( $email_address, $page = 1 ) {
 			);
 
 			$data_to_export[] = array(
-				'group_id'    => 'media',
-				'group_label' => __( 'Media' ),
-				'item_id'     => "post-{$post->ID}",
-				'data'        => $post_data_to_export,
+				'group_id'          => 'media',
+				'group_label'       => __( 'Media' ),
+				'group_description' => __( 'User&#8217;s media data.' ),
+				'item_id'           => "post-{$post->ID}",
+				'data'              => $post_data_to_export,
 			);
 		}
 	}

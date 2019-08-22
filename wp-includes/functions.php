@@ -46,10 +46,11 @@ function mysql2date( $format, $date, $translate = true ) {
 }
 
 /**
- * Retrieve the current time based on specified type.
+ * Retrieves the current time based on specified type.
  *
  * The 'mysql' type will return the time in the format for MySQL DATETIME field.
- * The 'timestamp' type will return the current timestamp.
+ * The 'timestamp' type will return the current timestamp or a sum of timestamp
+ * and timezone offset, depending on `$gmt`.
  * Other strings will be interpreted as PHP date formats (e.g. 'Y-m-d').
  *
  * If $gmt is set to either '1' or 'true', then both types will use GMT time.
@@ -63,18 +64,65 @@ function mysql2date( $format, $date, $translate = true ) {
  * @return int|string Integer if $type is 'timestamp', string otherwise.
  */
 function current_time( $type, $gmt = 0 ) {
-	switch ( $type ) {
-		case 'mysql':
-			return ( $gmt ) ? gmdate( 'Y-m-d H:i:s' ) : gmdate( 'Y-m-d H:i:s', ( time() + ( get_option( 'gmt_offset' ) * HOUR_IN_SECONDS ) ) );
-		case 'timestamp':
-			return ( $gmt ) ? time() : time() + ( get_option( 'gmt_offset' ) * HOUR_IN_SECONDS );
-		default:
-			return ( $gmt ) ? gmdate( $type ) : gmdate( $type, time() + ( get_option( 'gmt_offset' ) * HOUR_IN_SECONDS ) );
+	// Don't use non-GMT timestamp, unless you know the difference and really need to.
+	if ( 'timestamp' === $type || 'U' === $type ) {
+		return $gmt ? time() : time() + (int) ( get_option( 'gmt_offset' ) * HOUR_IN_SECONDS );
 	}
+
+	if ( 'mysql' === $type ) {
+		$type = 'Y-m-d H:i:s';
+	}
+
+	$timezone = $gmt ? new DateTimeZone( 'UTC' ) : wp_timezone();
+	$datetime = new DateTime( 'now', $timezone );
+
+	return $datetime->format( $type );
 }
 
 /**
- * Retrieve the date in localized format, based on a sum of Unix timestamp and
+ * Retrieves the timezone from current settings as a string.
+ *
+ * Uses the `timezone_string` option to get a proper timezone if available,
+ * otherwise falls back to an offset.
+ *
+ * @since 5.3.0
+ *
+ * @return string PHP timezone string or a ±HH:MM offset.
+ */
+function wp_timezone_string() {
+	$timezone_string = get_option( 'timezone_string' );
+
+	if ( $timezone_string ) {
+		return $timezone_string;
+	}
+
+	$offset  = (float) get_option( 'gmt_offset' );
+	$hours   = (int) $offset;
+	$minutes = ( $offset - $hours );
+
+	$sign      = ( $offset < 0 ) ? '-' : '+';
+	$abs_hour  = abs( $hours );
+	$abs_mins  = abs( $minutes * 60 );
+	$tz_offset = sprintf( '%s%02d:%02d', $sign, $abs_hour, $abs_mins );
+
+	return $tz_offset;
+}
+
+/**
+ * Retrieves the timezone from current settings as a `DateTimeZone` object.
+ *
+ * Timezone can be based on a PHP timezone string or a ±HH:MM offset.
+ *
+ * @since 5.3.0
+ *
+ * @return DateTimeZone Timezone object.
+ */
+function wp_timezone() {
+	return new DateTimeZone( wp_timezone_string() );
+}
+
+/**
+ * Retrieves the date in localized format, based on a sum of Unix timestamp and
  * timezone offset in seconds.
  *
  * If the locale specifies the locale month and weekday, then the locale will
@@ -83,7 +131,7 @@ function current_time( $type, $gmt = 0 ) {
  *
  * @since 0.71
  *
- * @global WP_Locale $wp_locale
+ * @global WP_Locale $wp_locale WordPress date and time locale object.
  *
  * @param string   $dateformatstring      Format to display the date.
  * @param int|bool $timestamp_with_offset Optional. A sum of Unix timestamp and timezone offset in seconds.
@@ -202,7 +250,7 @@ function date_i18n( $dateformatstring, $timestamp_with_offset = false, $gmt = fa
  *
  * @since 4.4.0
  *
- * @global WP_Locale $wp_locale
+ * @global WP_Locale $wp_locale WordPress date and time locale object.
  *
  * @param string $date Formatted date string.
  * @return string The date, declined if locale specifies it.
@@ -267,7 +315,7 @@ function wp_maybe_decline_date( $date ) {
  *
  * @since 2.3.0
  *
- * @global WP_Locale $wp_locale
+ * @global WP_Locale $wp_locale WordPress date and time locale object.
  *
  * @param float $number   The number to convert based on locale.
  * @param int   $decimals Optional. Precision of the number of decimal places. Default 0.
@@ -528,7 +576,7 @@ function is_serialized( $data, $strict = true ) {
 		case 'i':
 		case 'd':
 			$end = $strict ? '$' : '';
-			return (bool) preg_match( "/^{$token}:[0-9.E-]+;$end/", $data );
+			return (bool) preg_match( "/^{$token}:[0-9.E+-]+;$end/", $data );
 	}
 	return false;
 }
@@ -1112,9 +1160,9 @@ function wp_remote_fopen( $uri ) {
  *
  * @since 2.0.0
  *
- * @global WP       $wp_locale
- * @global WP_Query $wp_query
- * @global WP_Query $wp_the_query
+ * @global WP       $wp           Current WordPress environment instance.
+ * @global WP_Query $wp_query     WordPress Query object.
+ * @global WP_Query $wp_the_query Copy of the WordPress Query object.
  *
  * @param string|array $query_vars Default WP_Query arguments.
  */
@@ -1378,7 +1426,7 @@ function bool_from_yn( $yn ) {
  *
  * @since 2.1.0
  *
- * @global WP_Query $wp_query Used to tell if the use a comment feed.
+ * @global WP_Query $wp_query WordPress Query object.
  */
 function do_feed() {
 	global $wp_query;
@@ -2966,7 +3014,7 @@ function wp_nonce_ays( $action ) {
  *              an integer to be used as the response code.
  * @since 5.1.0 The `$link_url`, `$link_text`, and `$exit` arguments were added.
  *
- * @global WP_Query $wp_query Global WP_Query instance.
+ * @global WP_Query $wp_query WordPress Query object.
  *
  * @param string|WP_Error  $message Optional. Error message. If this is a WP_Error object,
  *                                  and not an Ajax or XML-RPC request, the error's messages are used.
@@ -4789,10 +4837,10 @@ function _doing_it_wrong( $function, $message, $version ) {
 				/* translators: %s: version number */
 				$version = sprintf( __( '(This message was added in version %s.)' ), $version );
 			}
-			/* translators: %s: Codex URL */
+			/* translators: %s: Documentation URL */
 			$message .= ' ' . sprintf(
 				__( 'Please see <a href="%s">Debugging in WordPress</a> for more information.' ),
-				__( 'https://codex.wordpress.org/Debugging_in_WordPress' )
+				__( 'https://wordpress.org/support/article/debugging-in-wordpress/' )
 			);
 			/* translators: Developer debugging message. 1: PHP function name, 2: Explanatory message, 3: Version information message */
 			trigger_error( sprintf( __( '%1$s was called <strong>incorrectly</strong>. %2$s %3$s' ), $function, $message, $version ) );
@@ -4804,7 +4852,7 @@ function _doing_it_wrong( $function, $message, $version ) {
 			}
 			$message .= sprintf(
 				' Please see <a href="%s">Debugging in WordPress</a> for more information.',
-				'https://codex.wordpress.org/Debugging_in_WordPress'
+				'https://wordpress.org/support/article/debugging-in-wordpress/'
 			);
 			trigger_error( sprintf( '%1$s was called <strong>incorrectly</strong>. %2$s %3$s', $function, $message, $version ) );
 		}
@@ -5594,7 +5642,7 @@ function get_file_data( $file, $default_headers, $context = '' ) {
 	$fp = fopen( $file, 'r' );
 
 	// Pull only the first 8kiB of the file in.
-	$file_data = fread( $fp, 8192 );
+	$file_data = fread( $fp, 8 * KB_IN_BYTES );
 
 	// PHP will close file handle, but we are good citizens.
 	fclose( $fp );
@@ -6346,7 +6394,7 @@ function wp_delete_file_from_directory( $file, $directory ) {
  *
  * @since 4.3.0
  *
- * @global WP_Post $post
+ * @global WP_Post $post Global post object.
  */
 function wp_post_preview_js() {
 	global $post;
@@ -6790,6 +6838,7 @@ function wp_privacy_anonymize_data( $type, $data = '' ) {
 			break;
 		default:
 			$anonymous = '';
+			break;
 	}
 
 	/**

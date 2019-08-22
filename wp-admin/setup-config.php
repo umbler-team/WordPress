@@ -88,7 +88,7 @@ $step = isset( $_GET['step'] ) ? (int) $_GET['step'] : -1;
  * @since 2.3.0
  *
  * @global string    $wp_local_package
- * @global WP_Locale $wp_locale
+ * @global WP_Locale $wp_locale        WordPress date and time locale object.
  *
  * @param string|array $body_classes
  */
@@ -186,10 +186,10 @@ switch ( $step ) {
 		?>
 	</strong>
 		<?php
-		/* translators: %s: Codex URL */
+		/* translators: %s: Documentation URL */
 		printf(
 			__( 'Need more help? <a href="%s">We got it</a>.' ),
-			__( 'https://codex.wordpress.org/Editing_wp-config.php' )
+			__( 'https://wordpress.org/support/article/editing-wp-config-php/' )
 		);
 		?>
 </p>

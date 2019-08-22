@@ -29,7 +29,7 @@ get_current_screen()->add_help_tab(
 
 get_current_screen()->set_help_sidebar(
 	'<p><strong>' . __( 'For more information:' ) . '</strong></p>' .
-	'<p>' . __( '<a href="https://codex.wordpress.org/Network_Admin_Sites_Screen">Documentation on Site Management</a>' ) . '</p>' .
+	'<p>' . __( '<a href="https://wordpress.org/support/article/network-admin-sites-screen/">Documentation on Site Management</a>' ) . '</p>' .
 	'<p>' . __( '<a href="https://wordpress.org/support/forum/multisite/">Support Forums</a>' ) . '</p>'
 );
 
@@ -42,6 +42,8 @@ if ( isset( $_REQUEST['action'] ) && 'add-site' == $_REQUEST['action'] ) {
 
 	$blog   = $_POST['blog'];
 	$domain = '';
+
+	$blog['domain'] = trim( $blog['domain'] );
 	if ( preg_match( '|^([a-zA-Z0-9-])+$|', $blog['domain'] ) ) {
 		$domain = strtolower( $blog['domain'] );
 	}

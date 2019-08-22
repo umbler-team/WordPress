@@ -10,7 +10,7 @@
 /**
  * The WordPress Query class.
  *
- * @link https://codex.wordpress.org/Function_Reference/WP_Query Codex page.
+ * @link https://developer.wordpress.org/reference/classes/wp_query/
  *
  * @since 1.5.0
  * @since 4.5.0 Removed the `$comments_popup` property.
@@ -3259,7 +3259,7 @@ class WP_Query {
 	 *
 	 * @since 1.5.0
 	 *
-	 * @global WP_Post $post
+	 * @global WP_Post $post Global post object.
 	 */
 	public function the_post() {
 		global $post;
@@ -4161,7 +4161,7 @@ class WP_Query {
 	 *
 	 * @since 3.3.0
 	 *
-	 * @global WP_Query $wp_query Global WP_Query instance.
+	 * @global WP_Query $wp_query WordPress Query object.
 	 *
 	 * @return bool
 	 */
@@ -4326,7 +4326,7 @@ class WP_Query {
 	 *
 	 * @since 3.7.0
 	 *
-	 * @global WP_Post $post
+	 * @global WP_Post $post Global post object.
 	 */
 	public function reset_postdata() {
 		if ( ! empty( $this->post ) ) {

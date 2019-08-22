@@ -10,8 +10,8 @@
  * This functionality was found in a plugin before the WordPress 2.2 release, which
  * included it in the core from that point on.
  *
- * @link https://codex.wordpress.org/Plugins/WordPress_Widgets WordPress Widgets
- * @link https://codex.wordpress.org/Plugins/WordPress_Widgets_Api Widgets API
+ * @link https://wordpress.org/support/article/wordpress-widgets/
+ * @link https://developer.wordpress.org/themes/functionality/widgets/
  *
  * @package WordPress
  * @subpackage Widgets
@@ -1124,6 +1124,13 @@ function the_widget( $widget, $instance = array(), $args = array() ) {
 	$args['before_widget'] = sprintf( $args['before_widget'], $widget_obj->widget_options['classname'] );
 
 	$instance = wp_parse_args( $instance );
+
+	/** This filter is documented in wp-includes/class-wp-widget.php */
+	$instance = apply_filters( 'widget_display_callback', $instance, $widget_obj, $args );
+
+	if ( false === $instance ) {
+		return;
+	}
 
 	/**
 	 * Fires before rendering the requested widget.
