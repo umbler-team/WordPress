@@ -1,4 +1,9 @@
 name: wordpress
+author: Umbler
+logo_url: https://design.umbler.com//assets/svg/sprite-logos.svg#wordpress
+version: 1.0
+description: "WordPress is software designed for everyone, emphasizing accessibility, performance, security, and ease of use. We believe great software should work with minimum set up, so you can focus on sharing your story, product, or services freely. The basic WordPress software is simple and predictable so you can easily get started. It also offers powerful features for growth and success."
+short_description: "Over 60 million people choose WordPress to power their websites and blogs."
 stack: php
 pack: "**/*.*"
 dest: /public
@@ -19,5 +24,19 @@ env:
   php_extensions: "gd mysql mysqli opcache pdo_mysql soap"
   
 requires:
+  web: 
+    quantity: 1
+    size: 1
   database:
     - type: mysql
+
+
+
+
+
+
+
+
+
+
+
