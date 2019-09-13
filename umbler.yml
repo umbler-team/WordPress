@@ -27,6 +27,9 @@ requires:
   web: 
     quantity: 1
     size: 1
+  database:
+    - type: mysql
+
 
 
 
